@@ -1,0 +1,6 @@
+{
+  "name": "experiment-loop",
+  "description": "Agentic loop for ML experiment automation: onboarding, experiment design, tech design, implementation, running experiments, reporting, and wiki upkeep",
+  "version": "1.0.0",
+  "keywords": ["ml", "experiment", "agentic-loop", "research"]
+}
