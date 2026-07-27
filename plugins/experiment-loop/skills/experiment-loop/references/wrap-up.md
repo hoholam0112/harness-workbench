@@ -36,45 +36,23 @@ datasets); delete `temp` ones (intermediate epochs, scratch). Confirm before
 deleting anything large or shared across loops. Update the map for every
 artifact deleted or kept.
 
-## 2. LLM wiki update
+## 2. Wiki update and promotion
 
-Run the wiki update procedure in `references/llm-wiki.md` (change-scope diff →
-parallel updater subagents per `docs/agent/knowledge/` subdirectory → verifier
-subagents → garden the wiki). Gardening covers where new documents go,
-restructuring `knowledge/` when a subdirectory outgrows its topic, and updating
-`index.md`/`glossary.md` for every added, moved, or deleted document. If this
-loop changed the code structure (moved files, new entry points/modules),
-refresh `docs/agent/knowledge/code-map.md`.
+**Invoke the `experiment-wiki` skill.** It runs the change-scope diff, the
+parallel updater and verifier subagents, the gardening pass, and the promotion
+of this loop's log into `knowledge/`, `knowledge/decisions/`, and
+`guidance/human-feedback.md`. Do not run those steps from here.
 
-## 3. Promote loop-scoped content
+Give it this loop's `start_commit` from `state.json` and the path to this
+loop's `loop-log.md`.
 
-Consolidate the loop log (`docs/agent/loops/<loop-id>/loop-log.md`) into the
-persistent stores. Sort each important item by the "Which bucket?" rule in
-`references/llm-wiki.md`:
-- A rule about HOW the agent should work (a correction or preference to carry
-  forward) → `docs/agent/guidance/human-feedback.md`.
-- A choice about WHAT to build or run, and why → an ADR in
-  `docs/agent/knowledge/decisions/` (`templates/decision-record.md`).
-- A current fact about the project (new/changed behavior, config, data) →
-  update the relevant `docs/agent/knowledge/` doc in place.
+## 3. Append to the experiment ledger
 
-If this loop measured serving numbers, update `docs/agent/knowledge/serving.md`
-with them — the measured latency/throughput/cost, the condition they were
-measured under, and which targets are now met. These are current facts about the
-project, so they belong in the doc, not only in this loop's report; the next
-loop's stage 1 reads them to see where serving actually stands. If the doc does
-not exist yet (serving targets settled after onboarding), create it and mark it
-always-read core in `docs/index.md`.
-
-The loop's record documents (including the log) stay in place (see section 1);
-only scratch is collected.
-
-Append this loop's experiments to the experiment ledger
-(`docs/agent/knowledge/experiment-ledger.md`): one short row per experiment run
-this loop (a loop with several variants gets several rows) — loop id,
+Append one short row per experiment run this loop (a loop with several variants
+gets several rows) to `docs/agent/knowledge/experiment-ledger.md`: loop id,
 hypothesis, key setup, key result, outcome — citing this loop's report. Keep
 cells short; detail stays in the report. This keeps the ledger the single
-up-to-date index stage 1 checks to avoid repeats.
+up-to-date index that stage 1 checks to avoid repeats.
 
 ## 4. Tools & hooks review
 

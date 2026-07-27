@@ -28,10 +28,10 @@ knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage
   zero-padded sequence + slug) with `state.json` initialized: stage 1,
   `in_progress`, `start_commit` set to the current commit hash (used by
   wrap-up's change-scope diff). Also start `loop-log.md` (from
-  `templates/loop-log.md`) — appended with human choices and inputs through the
+  `../../shared/templates/loop-log.md`) — appended with human choices and inputs through the
   whole loop, distilled at wrap-up.
 - `experiment-design.md` in the loop directory, from
-  `templates/experiment-design-doc.md`: problem definition / data /
+  `../../shared/templates/experiment-design-doc.md`: problem definition / data /
   external research / prior error review / hypothesis / search space /
   evaluation method / constraints / acceptance criteria / out of scope.
 
@@ -86,7 +86,7 @@ knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage
 8. Write the design doc. For every other section, present the user a question
    with 2-3 options (include a free-form option for their own input). Keep the
    writing plain — detailed but easy, readable by an undergraduate.
-9. Verification gate (references/verification-gate.md). Criteria:
+9. Verification gate (../../shared/verification-gate.md). Criteria:
    - the hypothesis is falsifiable;
    - the evaluation method can actually measure the acceptance criteria;
    - the data section matches the real data (checked against code/files);

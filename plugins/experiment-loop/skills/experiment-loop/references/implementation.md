@@ -35,7 +35,7 @@ log actually advances — this is what stage 4's stall check reads.
 
 ## Verification gate
 
-Run the gate (references/verification-gate.md) at each checkpoint the
+Run the gate (../../shared/verification-gate.md) at each checkpoint the
 implementation plan marks — at minimum once after all tasks. Criteria:
 
 - the code matches the Tech Design Spec;
