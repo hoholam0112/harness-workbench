@@ -22,8 +22,8 @@ Writing principles:
 - No placeholders. Every section holds real content; if something is genuinely
   N/A, say so and why.
 
-This markdown feeds the HTML report (see the "HTML rendering" section of
-references/experiment.md); the sections below map to its six tabs, plus setup
+This markdown feeds the HTML report (see the "HTML rendering" section of the
+experiment-report skill); the sections below map to its six tabs, plus setup
 and acceptance-criteria for the verification gate.
 -->
 

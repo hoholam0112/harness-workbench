@@ -163,8 +163,8 @@ Whenever you add, move, or delete a document, update `docs/index.md`.
 **Always-read core.** `docs/index.md` marks a small set of knowledge docs as
 "always-read core" — the must-know project facts and constraints an agent needs
 before any work (e.g. what the data really is, hard limits, the current goal).
-Every stage reads these every time, not selectively (see SKILL.md "Progressive
-context loading, with an always-read core"). Keep the set small so "always read"
+Every stage reads these every time, not selectively (see "Always-read core"
+above, in this file's Shared Principles). Keep the set small so "always read"
 stays cheap; when you capture a durable fact the agent must not forget, add its
 doc to this core in `index.md`. This is the recall half of on-the-spot capture:
 a fact written but not marked core can still be skipped.

@@ -5,9 +5,9 @@ the loop.
 
 ## Must read first
 
-The **always-read core** (SKILL.md → "Progressive context loading, with an
-always-read core"): `docs/glossary.md`, `docs/index.md`, the always-read core
-knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage:
+The **always-read core** (SKILL.md → "Always-read core"):
+`docs/glossary.md`, `docs/index.md`, the always-read core knowledge docs, and
+`docs/agent/guidance/human-feedback.md`. Plus for this stage:
 
 - this loop's `loop-log.md` — the raw record to distill into the wiki;
 - this loop's `experiment-report.md` — what the ledger row cites;

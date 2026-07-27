@@ -4,9 +4,9 @@
 
 ## Must read first
 
-The **always-read core** (SKILL.md → "Progressive context loading, with an
-always-read core"): `docs/glossary.md`, `docs/index.md`, the always-read core
-knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage:
+The **always-read core** (SKILL.md → "Always-read core"):
+`docs/glossary.md`, `docs/index.md`, the always-read core knowledge docs, and
+`docs/agent/guidance/human-feedback.md`. Plus for this stage:
 
 - this loop's `tech-design-spec.md` — the exact commands, metrics, and
   thresholds that decide each acceptance criterion, the **Serving Measurement

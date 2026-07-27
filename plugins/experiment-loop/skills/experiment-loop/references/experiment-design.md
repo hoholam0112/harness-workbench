@@ -5,9 +5,9 @@ that tech design can start.
 
 ## Must read first
 
-The **always-read core** (SKILL.md → "Progressive context loading, with an
-always-read core"): `docs/glossary.md`, `docs/index.md`, the always-read core
-knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage:
+The **always-read core** (SKILL.md → "Always-read core"):
+`docs/glossary.md`, `docs/index.md`, the always-read core knowledge docs, and
+`docs/agent/guidance/human-feedback.md`. Plus for this stage:
 
 - the previous loop's `experiment-report.md` (its Error Analysis) — what failed
   last time; if this is the first loop, note there is none;
@@ -75,7 +75,7 @@ knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage
    before this was required), ask the user once — does this project serve
    requests, and if so what are the latency/throughput/cost targets and the
    condition they hold under? Write their answer to its home immediately per
-   SKILL.md "Capture durable facts on the spot": into
+   SKILL.md "Durable facts go to the wiki immediately": into
    `docs/agent/knowledge/serving.md`, marked always-read core in `index.md`, and
    tell the user where you saved it. Do not carry the answer only in this loop's
    doc — the next loop would have to ask again.
