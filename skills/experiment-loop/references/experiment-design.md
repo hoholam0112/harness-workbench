@@ -14,7 +14,12 @@ knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage
 - `docs/agent/knowledge/experiment-ledger.md` — every experiment already run, to
   avoid proposing a repeat;
 - the PRD in `docs/human/raw/` and `docs/agent/knowledge/long-term-plan.md` (if
-  it exists) — what this loop should serve;
+  it exists) — what this loop should serve. Read the PRD's **Serving
+  Requirements** section specifically: it decides whether this loop must plan to
+  measure serving numbers;
+- `docs/agent/knowledge/serving.md` (if it exists) — the serving targets and the
+  numbers measured so far, so this loop's Constraints start from the real
+  current state rather than the original targets alone;
 - `docs/agent/knowledge/code-map.md` — to ground the current state in real code.
 
 ## Deliverables
@@ -65,10 +70,23 @@ knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage
      one reason for each in the doc's Search Space section.
    - Never settle a material factor, its range, or the budget on your own
      without offering the user the choice first.
-7. Write the design doc. For every other section, present the user a question
+7. **Settle the serving question before writing Constraints.** Read the PRD's
+   Serving Requirements. If the PRD has no such section (a project onboarded
+   before this was required), ask the user once — does this project serve
+   requests, and if so what are the latency/throughput/cost targets and the
+   condition they hold under? Write their answer to its home immediately per
+   SKILL.md "Capture durable facts on the spot": into
+   `docs/agent/knowledge/serving.md`, marked always-read core in `index.md`, and
+   tell the user where you saved it. Do not carry the answer only in this loop's
+   doc — the next loop would have to ask again.
+   Then decide, as a user question with options, whether THIS loop measures the
+   serving targets. Measuring costs run time, so it is the user's call — but a
+   loop that changes the inference path and skips measurement should be flagged
+   as such when you present the options.
+8. Write the design doc. For every other section, present the user a question
    with 2-3 options (include a free-form option for their own input). Keep the
    writing plain — detailed but easy, readable by an undergraduate.
-8. Verification gate (references/verification-gate.md). Criteria:
+9. Verification gate (references/verification-gate.md). Criteria:
    - the hypothesis is falsifiable;
    - the evaluation method can actually measure the acceptance criteria;
    - the data section matches the real data (checked against code/files);
@@ -79,8 +97,15 @@ knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage
      what differs and why re-running is justified;
    - the Search Space records which high-impact factors/ranges/budget the user
      chose from offered options, and gives a reason for every value filled by a
-     default — no material factor was fixed silently.
-9. Request user review (`status: awaiting_user_review`); revise until
-   approved.
+     default — no material factor was fixed silently;
+   - **serving**: if the project serves requests (PRD Serving Requirements), the
+     Constraints section restates the targets as concrete numbers — each with
+     the condition it must hold under — and states which of them this loop
+     measures, or gives one sentence of why it measures none. A Constraints
+     section that points at the PRD instead of restating the numbers, or that
+     omits the measure/don't-measure decision, is a Major issue. If the project
+     has no serving, Constraints says so and repeats the PRD's reason.
+10. Request user review (`status: awaiting_user_review`); revise until
+    approved.
 
 **Done when:** user approves the doc. Set state to stage 2.

@@ -58,6 +58,14 @@ persistent stores. Sort each important item by the "Which bucket?" rule in
 - A current fact about the project (new/changed behavior, config, data) →
   update the relevant `docs/agent/knowledge/` doc in place.
 
+If this loop measured serving numbers, update `docs/agent/knowledge/serving.md`
+with them — the measured latency/throughput/cost, the condition they were
+measured under, and which targets are now met. These are current facts about the
+project, so they belong in the doc, not only in this loop's report; the next
+loop's stage 1 reads them to see where serving actually stands. If the doc does
+not exist yet (serving targets settled after onboarding), create it and mark it
+always-read core in `docs/index.md`.
+
 The loop's record documents (including the log) stay in place (see section 1);
 only scratch is collected.
 

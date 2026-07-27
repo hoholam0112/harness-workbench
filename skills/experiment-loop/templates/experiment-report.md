@@ -22,8 +22,8 @@ Writing principles:
 - No placeholders. Every section holds real content; if something is genuinely
   N/A, say so and why.
 
-This markdown feeds the HTML report (see the "HTML report" section of
-references/experiment.md); the sections below map to its five tabs, plus setup
+This markdown feeds the HTML report (see the "HTML rendering" section of
+references/experiment.md); the sections below map to its six tabs, plus setup
 and acceptance-criteria for the verification gate.
 -->
 
@@ -57,6 +57,32 @@ and acceptance-criteria for the verification gate.
      data, ground-truth answer, model output, side by side. Group by error
      type and explain the patterns you see — what fails, and a hypothesis for
      why. The samples are shown inline (not linked out). -->
+
+## Serving & Cost
+<!-- What it costs to actually run this in production, and how fast it is —
+     measured this loop per the tech design spec's Serving Measurement Plan.
+
+     For latency (p50 and p95), throughput, and cost, give three things each:
+     the measured value, the target from the design doc's Constraints, and
+     whether the target is met. A table works well here.
+
+     State the measurement condition next to the numbers — hardware, batch
+     size, concurrent requests, input length, request count. A latency figure
+     without its condition cannot be reproduced or compared against the next
+     loop's, so it does not count as measured.
+
+     Cost is three separate figures; label each one "measured" or "estimated":
+     per-request inference cost, this loop's one-off training/tuning cost, and
+     the monthly running-cost estimate — and for the monthly figure, say what
+     traffic volume it assumes.
+
+     Explain each term plainly on first use, for a reader who does not know
+     them (e.g. "p95 latency (the response time that 95 out of 100 requests
+     come in under — the slow tail users notice; lower is better)").
+
+     Every number cites its output file. If this loop measured no serving
+     numbers, write "N/A" and repeat the one-sentence reason from the design
+     doc — do not estimate figures to fill the section. -->
 
 ## Setup / Reproducibility
 <!-- Commit hash, configs (values shown inline, not just a path), data

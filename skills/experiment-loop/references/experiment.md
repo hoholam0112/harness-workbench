@@ -9,9 +9,12 @@ always-read core"): `docs/glossary.md`, `docs/index.md`, the always-read core
 knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage:
 
 - this loop's `tech-design-spec.md` — the exact commands, metrics, and
-  thresholds that decide each acceptance criterion, and the progress-logging
-  plan the stall check relies on;
-- this loop's `experiment-design.md` — the acceptance criteria to evaluate;
+  thresholds that decide each acceptance criterion, the **Serving Measurement
+  Plan** this stage executes, and the progress-logging plan the stall check
+  relies on;
+- this loop's `experiment-design.md` — the acceptance criteria to evaluate, and
+  the serving targets in its Constraints that the measured numbers are judged
+  against;
 - `docs/agent/knowledge/artifact-map.md` — where artifacts are stored and what
   to register;
 - `templates/experiment-report.md` when writing the loop markdown report (the
@@ -20,13 +23,20 @@ knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage
 For the project report (see the **Project report** section), also read the
 cross-loop sources: `docs/agent/knowledge/experiment-ledger.md`,
 `docs/agent/knowledge/long-term-plan.md` (if it exists), the PRD in
-`docs/human/raw/`, `docs/agent/knowledge/decisions/`, the relevant
-`docs/agent/knowledge/` topic docs (data/model/eval), and
+`docs/human/raw/` (including its **Serving Requirements**),
+`docs/agent/knowledge/decisions/`, the relevant `docs/agent/knowledge/` topic
+docs (data/model/eval, and `serving.md` if it exists), and
 `templates/project-report.md`.
 
 ## Execution
 
-- Steps per the tech design: data preparation → training → evaluation.
+- Steps per the tech design: data preparation → training → evaluation →
+  serving measurement. Run the serving measurement per the spec's **Serving
+  Measurement Plan** — its command, under its stated condition, writing to its
+  output file. Skip this step only when the plan says "N/A"; do not skip it
+  because the accuracy results already look decided. Record the measurement
+  condition alongside the numbers in the output file, so the report can cite
+  both from one place.
 - Run long jobs (anything that could outlive the session) in the background:
 
   ```
@@ -67,8 +77,8 @@ Each check, decide from log + PID:
 | PID gone, outputs incomplete / log shows error | **Failed** — rerun once at most; if it fails again, escalate instead of retrying. |
 
 Auto-continue only through the experiment's own steps (data preparation →
-training → evaluation): when one completes, start the next without waiting for
-the user. Stop for the user only at the report-review gate below, and at any
+training → evaluation → serving measurement): when one completes, start the
+next without waiting for the user. Stop for the user only at the report-review gate below, and at any
 escalation.
 
 **On session resume** (fresh session, jobs still in `state.json.jobs`): for
@@ -109,6 +119,14 @@ the user to review them together.
    placeholder section → Major). Plus these checks only the gate performs:
    - every number in the report traces to an output file;
    - each acceptance criterion is explicitly evaluated pass/fail;
+   - **serving**: each serving target from the design doc's Constraints appears
+     in Serving & Cost with its measured value, its measurement condition, and
+     a met/not-met judgement; the three cost figures are present and each
+     labeled measured or estimated, with the monthly estimate naming its
+     assumed traffic. A number without its measurement condition, or an
+     estimate presented as a measurement, is a Major issue. If the section says
+     "N/A", the reason matches the design doc's — a section filled with
+     estimates when the design doc planned measurement is a Major issue;
    - limitations are noted.
 3. Render a self-contained HTML version into `docs/shared/<loop-id>-report.html`
    for the user, built from this loop's real outputs — follow the **HTML
@@ -135,7 +153,13 @@ as it stands now.
    - every number traces to its source (a loop's `experiment-report.md`, a
      metrics file, or the ledger);
    - the report genuinely spans the whole project across loops — not a copy or
-     restatement of this single loop's report (→ Major if it is).
+     restatement of this single loop's report (→ Major if it is);
+   - **serving**: Serving & Cost judges the current best approach against the
+     PRD's Serving Requirements — measured value, target, met/not-met — with
+     the measurement condition stated and all three cost figures labeled
+     measured or estimated. If no loop has measured yet, the section says so
+     plainly rather than filling in estimates (→ Major if it estimates instead).
+     If the PRD has no serving requirement, "N/A" with the reason.
 6. Render `docs/shared/project-report.html`, built from the project report's real
    content — follow the **HTML rendering** section below, then run its
    verification gate before handing over.
@@ -153,9 +177,10 @@ by mistake and mislead the reader. Every value must come from the markdown
 report and its real outputs.
 
 Which sections become tabs depends on the report: the **loop report** uses the
-five tabs below; the **project report** presents its own template's sections
+six tabs below; the **project report** presents its own template's sections
 (Executive Summary, Progress & Roadmap, Experiment Journey, Current Best & State,
-Key Decisions, Technical Details, Terms & Metrics, Next Steps) as the tabs. All
+Serving & Cost, Key Decisions, Technical Details, Terms & Metrics, Next Steps) as
+the tabs. All
 other rules in this section — writing principles, design, charts, extend, gate —
 apply to both unchanged.
 
@@ -182,9 +207,9 @@ apply to both unchanged.
 
 ### Tabs and their contents (loop report)
 
-The loop report's five tabs: Overview, Data, Model, Experiment History, Error
-Analysis. (The project report instead uses its template's sections as tabs — see
-the intro above.)
+The loop report's six tabs: Overview, Data, Model, Experiment History, Error
+Analysis, Serving & Cost. (The project report instead uses its template's
+sections as tabs — see the intro above.)
 
 - **Overview** — background, problem definition, headline metrics (as KPI
   tiles), one summarizing chart, and a result summary that states each
@@ -205,6 +230,15 @@ the intro above.)
 - **Error Analysis** — 20-30 real cases (mix of wrong and correct), each showing
   input, ground-truth answer, and model output at a glance, plus discussion of
   the error patterns.
+- **Serving & Cost** — how fast it runs and what it costs, from the markdown
+  report's Serving & Cost section. A table of measured value vs. target vs.
+  met/not-met for latency (p50/p95), throughput, and the three cost figures.
+  Put the measurement condition (hardware, batch size, concurrency, input
+  length) in plain sight next to the table, not in a footnote — it is what
+  makes the numbers mean anything. Gloss p50/p95, throughput, and each cost
+  figure on first use, and mark every cost figure measured or estimated. If the
+  loop measured none, the tab says so with the reason; do not fill it with
+  estimates.
 
 ### Design
 
@@ -232,7 +266,7 @@ compared — for Experiment History that is the experiment/variant, not epochs.
 
 ### Extend for the reader
 
-The five tabs are the floor. Once they hold real content, stop and ask: *what
+The six tabs are the floor. Once they hold real content, stop and ask: *what
 would make THIS result click for the user?* Then add it — a per-slice breakdown,
 a before/after comparison, an extra table, a short callout of the one thing that
 surprised you. Judge each addition by "does this help the reader understand?",
@@ -246,8 +280,9 @@ it to the user. It checks the **same criteria the HTML was built to** — every
 requirement in the Writing principles, the report's tabs/sections, Design, and
 Charts (audience readability, per-section depth, self-contained file; for the
 loop report, cross-loop Experiment History; for the project report, a
-genuinely whole-project view) — so guidance and gate stay one and the same. Flag
-any violation by severity. **Open the rendered file in a browser and look**; do
+genuinely whole-project view; for both, a Serving & Cost tab whose numbers carry
+their measurement condition and are labeled measured or estimated) — so guidance
+and gate stay one and the same. Flag any violation by severity. **Open the rendered file in a browser and look**; do
 not judge from the source. Plus these checks only the gate performs:
 
 - **Opens and renders**: loads with no console errors; every tab switches and

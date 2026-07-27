@@ -25,6 +25,13 @@ knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage
   - AS-IS / TO-BE, based on the Experiment Design Doc;
   - acceptance criteria restated technically — the exact command, metric,
     and threshold that decides each one;
+  - serving measurement plan: for each serving target in the design doc's
+    Constraints, the command, the measurement condition (hardware, batch size,
+    concurrency, input length, request count, warm-up), the output file, and
+    the pass/fail threshold — plus how the three cost figures (per-request
+    inference, this loop's one-off training, monthly estimate with its assumed
+    traffic) are computed. "N/A" with the design doc's reason if this loop
+    measures none;
   - verification plan: how the code will be reviewed and tested;
   - progress observability: for every long-running process (data prep,
     training, evaluation), specify how it reports progress at a regular
@@ -42,6 +49,13 @@ knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage
    - AS-IS matches the real code;
    - TO-BE is sufficient to run the designed experiment;
    - every acceptance criterion has a technical verification;
+   - **serving**: every serving target in the design doc's Constraints has a
+     measurement plan with its measurement condition spelled out, an output
+     file, and a threshold — a command with no stated hardware/batch/concurrency
+     produces a number nobody can reproduce or compare, so that is a Major
+     issue. The three cost figures each say how they are computed, and the
+     monthly estimate names the traffic it assumes. If the plan says "N/A", the
+     reason matches the one in the design doc rather than being invented here;
    - every long-running process has a progress-logging plan;
    - tasks are ordered, dependency-correct, and individually testable.
 3. Request user review; revise until approved.

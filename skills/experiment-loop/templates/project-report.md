@@ -29,10 +29,11 @@ Writing principles:
   N/A (e.g. first loop, no roadmap), say so and why.
 
 Sources: `experiment-ledger.md` (cross-loop index), `long-term-plan.md` (if it
-exists), the PRD in `docs/human/raw/`, `knowledge/decisions/` (ADRs), the
-`knowledge/` topic docs (data/model/eval), `artifact-map.md`, and — for the
-newest loop, whose ledger row is not written until wrap-up — this loop's
-`experiment-report.md` directly.
+exists), the PRD in `docs/human/raw/` (including its **Serving Requirements**,
+which the Serving & Cost section is judged against), `knowledge/decisions/`
+(ADRs), the `knowledge/` topic docs (data/model/eval, and `serving.md` if it
+exists), `artifact-map.md`, and — for the newest loop, whose ledger row is not
+written until wrap-up — this loop's `experiment-report.md` directly.
 
 First loop → say so; Journey and Roadmap then cover the single loop.
 -->
@@ -64,6 +65,33 @@ First loop → say so; Journey and Roadmap then cover the single loop.
      project — what is kept and reusable (from `artifact-map.md`: final
      checkpoints, datasets, eval outputs). -->
 
+## Serving & Cost
+<!-- Can this go to production, how fast is it, and what does it cost? Answer
+     for the project as it stands now, across all loops.
+
+     Take the current best approach (the one named in Current Best & State) and
+     give, for latency (p50/p95), throughput, and cost: the measured value, the
+     target from the PRD's Serving Requirements, and whether the target is met.
+     State the measurement condition alongside — hardware, batch size,
+     concurrent requests, input length. Numbers without it cannot be compared
+     across loops.
+
+     Cost is three figures, each labeled measured or estimated: per-request
+     inference cost, the cumulative training/tuning cost across all loops so
+     far, and the monthly running-cost estimate with the traffic volume it
+     assumes.
+
+     If more than one loop measured these, show how they moved — a small table
+     of loop vs. figure makes progress (or regression) visible at a glance.
+
+     Every number cites its source: the loop report it came from, a metrics
+     file, or `knowledge/serving.md`. Explain each term plainly on first use.
+
+     If the PRD says the project has no serving requirement, write "N/A" and
+     one sentence of why. If it has one but no loop has measured yet, say that
+     plainly — an unmeasured requirement is a real status a decision-maker
+     needs, not a gap to paper over with estimates. -->
+
 ## Key Decisions
 <!-- APPENDIX. The significant choices that shaped the project and why, distilled
      from `knowledge/decisions/` (ADRs): what was decided, the alternatives, and
@@ -76,8 +104,9 @@ First loop → say so; Journey and Roadmap then cover the single loop.
      understand how results were produced. -->
 
 ## Terms & Metrics
-<!-- Plain-language glossary of the jargon and every evaluation metric used in
-     this report: what each measures, how to read it, and what a good vs. bad
+<!-- Plain-language glossary of the jargon and every metric used in this report
+     — evaluation metrics AND serving metrics (p50/p95 latency, throughput, the
+     cost figures): what each measures, how to read it, and what a good vs. bad
      value looks like. For the non-data-scientist reader. -->
 
 ## Next Steps

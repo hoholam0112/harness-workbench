@@ -48,8 +48,10 @@ The top-level split is by subject: `knowledge/` is about the **project**;
   checkpoints, datasets, run outputs and whether to keep them), the experiment
   ledger (`experiment-ledger.md` — every experiment run so far, one row each),
   how the data pipeline works, dataset descriptions, model/architecture notes,
-  the evaluation setup, recurring error patterns, environment/infra notes, and
-  the long-term plan (`long-term-plan.md`) if one exists. These hold the CURRENT
+  the evaluation setup, recurring error patterns, environment/infra notes,
+  serving targets and the serving numbers measured so far (`serving.md`, when
+  the project serves requests), and the long-term plan (`long-term-plan.md`) if
+  one exists. These hold the CURRENT
   TRUE STATE — update them in place as the project changes. Also here: the
   whole-project report (`project-report.md`) — a reader-facing summary spanning
   all loops, refreshed at each loop's stage 4 (its HTML render goes to

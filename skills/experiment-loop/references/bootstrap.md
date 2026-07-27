@@ -41,6 +41,14 @@ the code structure, the experiment/training entry points, and the test setup
     non-code, non-doc artifacts (checkpoints, datasets, run outputs, plots).
     Record the project's artifact storage convention (where they live) and any
     artifacts that already exist; else an empty table.
+  - `serving.md` — **only if the PRD's Serving Requirements says the project
+    serves requests.** Restate the targets (latency p50/p95 with the condition
+    they hold under, throughput, per-request and monthly cost ceilings with the
+    traffic the monthly figure assumes), plus any serving numbers already
+    measured before onboarding and how they were measured. Mark this doc
+    **always-read core** in `index.md` — every later loop must see the targets
+    without being told to look. If the PRD says "No serving", do not create the
+    file.
 - `docs/agent/guidance/human-feedback.md` (from `templates/human-feedback.md`)
   — log of human corrections and stated preferences, read before every stage's
   work. Seed it with any standing preferences the user gives during onboarding;
@@ -50,7 +58,13 @@ the code structure, the experiment/training entry points, and the test setup
   (explain to the user in plain Korean; see SKILL.md "Plain language").
 - A PRD in `docs/human/raw/`. If none exists, guide the user through writing one
   using `templates/prd.md`: interview them section by section — the user
-  authors the content, you scribe.
+  authors the content, you scribe. Settle **Serving Requirements** explicitly:
+  it is the switch that decides whether every later loop must measure serving
+  numbers, so "we'll figure it out later" is not an acceptable answer — get
+  either the targets or "No serving" with a reason. If a PRD already exists but
+  has no Serving Requirements section, ask the user for it and scribe their
+  answer into the PRD — read the wording back to them before saving, since
+  `human/raw/` is theirs.
 - Required MCP servers identified and the user guided to install them (see
   procedure step 5). Bootstrap does not install them itself.
 
@@ -73,7 +87,9 @@ the code structure, the experiment/training entry points, and the test setup
    `docs/agent/knowledge/` documents (code map, data pipeline, dataset, model,
    eval setup, environment). Write the step-1 code analysis into `code-map.md`.
    Decide where experiment artifacts are stored and record the convention plus
-   any existing artifacts in `artifact-map.md`. Create
+   any existing artifacts in `artifact-map.md`. Settle the PRD's Serving
+   Requirements now rather than at step 6 — the answer decides whether to seed
+   `serving.md` here and mark it always-read core. Create
    `docs/agent/guidance/human-feedback.md` (seeded with any standing
    preferences, else empty). Ground every claim in a source file. Then write
    `CLAUDE.md` at the project root with build/test/run commands, conventions,

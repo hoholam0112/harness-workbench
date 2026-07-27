@@ -39,7 +39,22 @@ necessary. An undergraduate should be able to read this without effort.
 <!-- Metrics, baselines, protocol -->
 
 ## Constraints
-<!-- Latency, throughput, cost, legal issues, etc. -->
+<!-- Serving constraints FIRST, then everything else.
+
+     Serving. Restate the PRD's Serving Requirements as concrete numbers (and
+     the current measured state from `knowledge/serving.md` if it exists): the
+     target latency p50/p95 and the condition they must hold under, the target
+     throughput, and the per-request and monthly cost ceilings with the traffic
+     the monthly figure assumes. Do not write "see the PRD" — the numbers go
+     here, because stage 2 builds the measurement plan from this section.
+     Then state what THIS loop does about them: which of these targets it
+     measures, or — if it measures none — one sentence of why (e.g. this loop
+     only changes data preparation and leaves the inference path untouched).
+     If the PRD says the project has no serving, write "No serving" and repeat
+     that one-sentence reason.
+
+     Other constraints: compute budget, data availability and licensing,
+     deadlines, legal issues. -->
 
 ## Acceptance Criteria
 <!-- Conditions that make this loop a success (accuracy, completeness, ...) -->
