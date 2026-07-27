@@ -19,8 +19,9 @@ Paths below are relative to this skill's own directory.
 - **Always-read core.** On user input, always read `docs/glossary.md`,
   `docs/index.md`, every knowledge doc that `index.md` marks as always-read
   core, and `docs/agent/guidance/human-feedback.md`. Read these every time —
-  judging whether you need them is exactly how known facts get skipped. Only
-  then open what the specific task needs.
+  judging whether you need them is exactly how known facts get skipped. Align
+  the user's terms against the glossary, and ask them rather than guess when a
+  term they used is ambiguous. Only then open what the specific task needs.
 - **Log human input.** Append every human choice, instruction, correction, and
   stated preference to `docs/agent/loops/<loop-id>/loop-log.md` as it happens.
   Completeness beats polish.
