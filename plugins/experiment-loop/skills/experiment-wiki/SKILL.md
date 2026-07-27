@@ -243,3 +243,9 @@ the claim is accurate. Do NOT modify any files.
 Return per claim: file, claim, verdict (accurate | inaccurate |
 unverifiable), evidence. Return "ALL ACCURATE" if everything checks out.
 ```
+
+## Then
+
+If wrap-up called this skill, report what you updated and return control so
+wrap-up can continue to its next section. If the user invoked this skill
+directly, just confirm what you recorded and where.

@@ -36,7 +36,7 @@ live in `references/` and are loaded only when entering a stage.
 | 1 experiment design | references/experiment-design.md | User approves Experiment Design Doc |
 | 2 tech design | references/tech-design.md | User approves Tech Design Spec + Implementation Plan |
 | 3 implementation | references/implementation.md | All tasks done, tests pass, gate passed |
-| 4 experiment | references/experiment.md | User reviewed the loop and project reports |
+| 4 experiment | references/experiment.md, then the `experiment-report` skill for reporting | User reviewed the loop and project reports |
 | 5 wrap-up | references/wrap-up.md | GC done, wiki verified, state closed |
 
 Stages run 1→5 within a loop. Enter 0.5 from stage 1 when the user's
