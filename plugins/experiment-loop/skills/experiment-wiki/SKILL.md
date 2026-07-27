@@ -1,3 +1,54 @@
+---
+name: experiment-wiki
+description: Records facts and decisions into the project's LLM wiki and keeps it current. Use whenever the user asks to record, save, or document something - "이거 기록해둬", "문서에 남겨줘", "위키에 저장해줘", "위키 갱신해줘", "이 결정 남겨줘", "정리해서 남겨줘" - and whenever the user states a durable project fact or constraint that must outlive this session, and at loop wrap-up when the wiki needs updating. Owns the rules for which document a piece of information belongs in. Always use this skill instead of editing wiki documents directly.
+---
+
+<!-- BEGIN shared-principles -->
+## Core Principles
+
+Paths below are relative to this skill's own directory.
+
+- **Code grounding.** Docs are for fast context only. Read the actual code
+  before judging, implementing, or verifying. When docs and code disagree,
+  trust the code.
+- **Claim-level sourcing.** Every claim in an agent-authored document cites its
+  source file (and line where useful).
+- **Template compliance (binding).** Create every document by copying its
+  template from `../../shared/templates/`, never by writing freely. Keep every
+  section heading unrenamed and in order, fill each with real content, delete
+  every guidance comment and `FILL` marker, and meet stated quantities
+  literally. "N/A" needs one sentence of why. The template is a floor, not a
+  cap — additions are welcome. Full rules:
+  `../../shared/template-compliance.md`. A deviation is a Major issue, not a
+  stylistic one.
+- **Always-read core.** On user input, always read `docs/glossary.md`,
+  `docs/index.md`, every knowledge doc that `index.md` marks as always-read
+  core, and `docs/agent/guidance/human-feedback.md`. Read these every time —
+  judging whether you need them is exactly how known facts get skipped. Only
+  then open what the specific task needs.
+- **Log human input.** Append every human choice, instruction, correction, and
+  stated preference to `docs/agent/loops/<loop-id>/loop-log.md` as it happens.
+  Completeness beats polish.
+- **Durable facts go to the wiki immediately.** The moment the user states a
+  fact or constraint that stays true beyond this turn, invoke the
+  `experiment-wiki` skill and write it to its home now — not at wrap-up. Then
+  tell the user in one line where you saved it. If the user tells you something
+  you should already know, that is proof the fact was never captured or is not
+  being read: capture it right then, and fix why it was not read.
+- **Escalation.** Stop, set `status: "escalated"` in `state.json`, record the
+  question in `pending_decisions`, describe the situation to the user, and
+  present 2-3 options.
+- **Verification gates** run in subagents per
+  `../../shared/verification-gate.md`. Subagents verify; they never execute the
+  work. After a gate passes, summarize what was produced before moving on.
+- **Language.** All docs and code in English. `docs/glossary.md` may contain
+  Korean. Talk to the user in Korean (technical terms in English).
+- **Plain language.** State the conclusion first, then a short reason. One idea
+  per sentence; keep sentences short. Gloss a technical term the first time you
+  use it. Prefer plain Korean over transliterated English (write "출처를 따라갈
+  수 있는지", not "추적성"). Prefer concrete verbs over abstract nouns.
+<!-- END shared-principles -->
+
 # LLM Wiki
 
 The agent-generated knowledge base under `docs/agent/`. It keeps project
@@ -11,10 +62,26 @@ context current and easy for agents to search and reuse across loops.
   source of truth at the file level (and line where useful).
 - Update the wiki at the end of each stage, not only at wrap-up. And when the
   user states a durable project fact or constraint, write it to its home
-  **immediately** (see SKILL.md "Capture durable facts on the spot") — do not
+  **immediately** (see "Capture on the spot" below) — do not
   defer a must-not-forget fact to wrap-up distillation.
 - `docs/CONVENTIONS.md` governs the wiki: document authority (human `raw/` is
   top authority), priority when sources disagree, and the frontmatter spec.
+
+## Capture on the spot
+
+The loop log is a raw dump distilled at wrap-up. That is too slow for a fact
+you must not forget. When the user states a durable project fact or constraint
+- about the data, the system, the goal, or a hard limit - write it to its home
+**now**: `knowledge/` per the "Which bucket?" rule below, a working preference
+to `guidance/human-feedback.md`, a term to `docs/glossary.md`. Cite its source,
+mark it always-read core in `docs/index.md` if it is core, then tell the user
+in one line where you saved it. Logging it only to the loop log does not count.
+
+If the user tells you something you should already know - restating a fact,
+re-explaining context, correcting the same mistake twice - treat it as proof
+the fact was never captured or is not being read. Capture it right then, and if
+it was already written, fix why it was not read (wrong location, not marked
+always-read). Close the leak, not just the symptom.
 
 ## Layout — what goes where
 
@@ -116,7 +183,7 @@ a fact written but not marked core can still be skipped.
    the fixed claims once with a fresh verifier. If a claim still fails, delete
    it and note it in `handoff_notes` — do not loop further.
 4. Garden the wiki:
-   - Place promoted content (see wrap-up) using the "Which bucket?" rule above
+   - Place promoted content (see below) using the "Which bucket?" rule above
      — new topic → new file/subdirectory under `knowledge/`, existing topic →
      update in place.
    - Restructure when a `knowledge/` subdirectory has grown too large to scan
@@ -125,6 +192,29 @@ a fact written but not marked core can still be skipped.
      structure every loop.
    - Update `docs/index.md` to reflect every added, moved, or deleted document,
      and `docs/glossary.md` if terminology changed.
+   - If this loop changed the code structure (moved files, new entry
+     points/modules), refresh `docs/agent/knowledge/code-map.md`.
+5. Promote loop-scoped content: consolidate the loop log
+   (`docs/agent/loops/<loop-id>/loop-log.md`) into the persistent stores. Sort
+   each important item by the "Which bucket?" rule above:
+   - A rule about HOW the agent should work (a correction or preference to
+     carry forward) → `docs/agent/guidance/human-feedback.md`.
+   - A choice about WHAT to build or run, and why → an ADR in
+     `docs/agent/knowledge/decisions/` (`templates/decision-record.md`).
+   - A current fact about the project (new/changed behavior, config, data) →
+     update the relevant `docs/agent/knowledge/` doc in place.
+
+   If this loop measured serving numbers, update
+   `docs/agent/knowledge/serving.md` with them — the measured
+   latency/throughput/cost, the condition they were measured under, and which
+   targets are now met. These are current facts about the project, so they
+   belong in the doc, not only in this loop's report; the next loop's stage 1
+   reads them to see where serving actually stands. If the doc does not exist
+   yet (serving targets settled after onboarding), create it and mark it
+   always-read core in `docs/index.md`.
+
+   The loop's record documents (including the log) stay in place; only
+   scratch is collected during garbage collection.
 
 ### Updater prompt template
 
