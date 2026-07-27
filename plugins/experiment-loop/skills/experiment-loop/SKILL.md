@@ -1,6 +1,6 @@
 ---
 name: experiment-loop
-description: Use when working on ML experiments in this project - starting or resuming an experiment loop, onboarding the project (bootstrap), designing experiments, tech design, implementation, running experiments, or wrapping up a loop. Acts as a dashboard for loop state.
+description: Runs and tracks the ML experiment loop - the dashboard and stages 1 through 5. Use when the user starts, resumes, or checks an experiment loop - "실험 루프 시작", "이어서 진행해줘", "지금 몇 단계야", "다음 단계 진행", "루프 상태 보여줘" - or when working through experiment design, tech design, implementation, running the experiment, or wrap-up. Reads state.json to find where the loop stands. For onboarding a new project use experiment-bootstrap; for writing reports use experiment-report; for recording anything into the wiki use experiment-wiki.
 ---
 
 # Experiment Loop
@@ -12,7 +12,7 @@ live in `references/` and are loaded only when entering a stage.
 ## On Invocation: Dashboard
 
 1. Check onboarding: if `docs/index.md` does not exist, the project is not
-   onboarded. Explain stage 0 and load `references/bootstrap.md`.
+   onboarded. Explain stage 0 and **invoke the `experiment-bootstrap` skill**.
 2. Find the latest loop state: `docs/agent/loops/*/state.json` (directories sort
    chronologically by name). If none exists, offer: (a) start the first loop
    (stage 1), (b) run bootstrap (stage 0).
@@ -31,7 +31,7 @@ live in `references/` and are loaded only when entering a stage.
 
 | Stage | Reference | Done when |
 |-------|-----------|-----------|
-| 0 bootstrap (once per project) | references/bootstrap.md | Layout + index.md + PRD exist; user confirms |
+| 0 bootstrap (once per project) | `experiment-bootstrap` skill | Layout + index.md + PRD exist; user confirms |
 | 0.5 long-term plan (as needed) | references/long-term-plan.md | User approves multi-loop plan |
 | 1 experiment design | references/experiment-design.md | User approves Experiment Design Doc |
 | 2 tech design | references/tech-design.md | User approves Tech Design Spec + Implementation Plan |
@@ -42,106 +42,77 @@ live in `references/` and are loaded only when entering a stage.
 Stages run 1→5 within a loop. Enter 0.5 from stage 1 when the user's
 requirement doesn't fit one loop; if unsure, ask the user.
 
-## Shared Principles (all stages)
+<!-- BEGIN shared-principles -->
+## Core Principles
+
+Paths below are relative to this skill's own directory.
 
 - **Code grounding.** Docs are for fast context only. Read the actual code
   before judging, implementing, or verifying. When docs and code disagree,
   trust the code.
-- **Claim-level sourcing.** Every claim in an agent-authored document cites
-  its source file (and line where useful). Applies to all stages — design
-  docs, specs, plans, reports, and wiki alike.
-- **Template compliance (binding).** Every document in the Templates list is
-  created by **copying its template file**, not by writing freely "inspired by"
-  it. The template is a **mandatory floor, not a cap**: fill all of it, then add
-  beyond it when that serves the reader. Non-negotiable:
-  - Keep **every** section heading from the template, unrenamed and in order.
-    Do not drop, rename, merge, or reorder the required sections. You **may**
-    add extra sections, subsections, tables, or charts beyond the floor when
-    they help the reader — additions are encouraged, never penalized.
-  - Each template embeds its requirements as guidance (HTML comments, or `FILL`
-    markers in the HTML report). Replace each one with real content, then delete
-    the guidance marker. A finished document contains **no** template guidance
-    text and **no** `FILL` marker.
-  - Every section holds real content. No section may be empty, a restatement of
-    its own heading, or a placeholder. If a section is genuinely not applicable,
-    write "N/A" **and one sentence of why** — silence is not allowed.
-  - Where a template states a quantity ("at least 20-30 cases", "sample rows"),
-    meet it literally.
-  This is enforced by the verification gate; a document that deviates from its
-  template is a Major issue, not a stylistic one.
-- **Progressive context loading, with an always-read core.** Don't load
-  everything up front, but some context is read **every time**, not "if the task
-  seems to need it" — judging need is exactly how known facts get skipped. On
-  user input, always read: `docs/glossary.md` (align terminology; ask when a
-  term is ambiguous), `docs/index.md`, and every knowledge doc `index.md` marks
-  as **always-read core** (the must-know project facts and constraints). Only
-  then open the additional documents the specific task needs.
-- **Consult feedback before work.** Before starting any stage's work, read
-  `docs/agent/guidance/human-feedback.md` and honor its rules — past
-  corrections and stated preferences. This is part of the always-read core.
-- **Log human input during the loop; consolidate at wrap-up.** As the loop
-  runs, append every human choice (the option-questions and their answers),
-  prompt instruction, correction, and stated preference to
-  `docs/agent/loops/<loop-id>/loop-log.md` — a cheap, complete record
-  (`templates/loop-log.md`). At wrap-up, distill it: significant decisions
-  become ADRs in `docs/agent/knowledge/decisions/`
-  (`templates/decision-record.md`), and corrections/preferences worth carrying
-  forward go to `docs/agent/guidance/human-feedback.md`.
-- **Capture durable facts on the spot — do NOT wait for wrap-up.** The loop log
-  is a raw dump distilled later; that is too slow for a fact you must not forget.
-  The moment the user states a **durable project fact or constraint** (about the
-  data, the system, the goal, or a hard limit — anything that stays true beyond
-  this turn), write it to its wiki home **immediately** (`knowledge/` per the
-  "Which bucket?" rule in `references/llm-wiki.md`; a corrected/preferred way of
-  working → `guidance/human-feedback.md`; a term → `docs/glossary.md`), cite its
-  source, mark it always-read in `docs/index.md` if it is core, then tell the
-  user in one line where you saved it. Logging it only to the loop log does not
-  count — that is the gap that makes context get forgotten.
-- **Repeating yourself is a bug signal.** If the user tells you something you
-  should already know — restating a fact, re-explaining context, or correcting
-  the same mistake twice — treat it as proof the fact was never captured or is
-  not being read. Do not just apologize and move on: capture it to its wiki home
-  right then (per the rule above), and if it was already written, fix why it
-  wasn't read (wrong location, not marked always-read). Close the leak, not just
-  the symptom.
-- **Escalation.** Stop the loop, set `status: "escalated"`, record the
-  question in `state.json.pending_decisions`, describe the situation to the
-  user, and present 2-3 options.
+- **Claim-level sourcing.** Every claim in an agent-authored document cites its
+  source file (and line where useful).
+- **Template compliance (binding).** Create every document by copying its
+  template from `../../shared/templates/`, never by writing freely. Keep every
+  section heading unrenamed and in order, fill each with real content, delete
+  every guidance comment and `FILL` marker, and meet stated quantities
+  literally. "N/A" needs one sentence of why. The template is a floor, not a
+  cap — additions are welcome. Full rules:
+  `../../shared/template-compliance.md`. A deviation is a Major issue, not a
+  stylistic one.
+- **Always-read core.** On user input, always read `docs/glossary.md`,
+  `docs/index.md`, every knowledge doc that `index.md` marks as always-read
+  core, and `docs/agent/guidance/human-feedback.md`. Read these every time —
+  judging whether you need them is exactly how known facts get skipped. Only
+  then open what the specific task needs.
+- **Log human input.** Append every human choice, instruction, correction, and
+  stated preference to `docs/agent/loops/<loop-id>/loop-log.md` as it happens.
+  Completeness beats polish.
+- **Durable facts go to the wiki immediately.** The moment the user states a
+  fact or constraint that stays true beyond this turn, invoke the
+  `experiment-wiki` skill and write it to its home now — not at wrap-up. Then
+  tell the user in one line where you saved it. If the user tells you something
+  you should already know, that is proof the fact was never captured or is not
+  being read: capture it right then, and fix why it was not read.
+- **Escalation.** Stop, set `status: "escalated"` in `state.json`, record the
+  question in `pending_decisions`, describe the situation to the user, and
+  present 2-3 options.
 - **Verification gates** run in subagents per
-  `references/verification-gate.md`. After a stage's gate passes, summarize
-  the stage's work to the user before moving on.
+  `../../shared/verification-gate.md`. Subagents verify; they never execute the
+  work. After a gate passes, summarize what was produced before moving on.
 - **Language.** All docs and code in English. `docs/glossary.md` may contain
-  Korean. Communicate with the user in Korean (technical terms in English).
-- **Plain language.** When explaining to the user (before and after work,
-  and at gate summaries), write so it reads without effort. Concretely:
-  - State the conclusion first, then a short reason.
-  - One idea per sentence; keep sentences short.
-  - Use a technical term only when necessary, and add a short plain gloss the
-    first time (e.g. "검증 게이트(결과물을 다시 검사하는 단계)").
-  - Avoid transliterated English loanwords when a plain Korean word exists
-    (write "출처를 따라갈 수 있는지", not "추적성"; "효과 큰 순서", not "레버리지 순").
-  - Prefer concrete verbs over abstract nouns ("검사한다", not "검증을 수행한다").
+  Korean. Talk to the user in Korean (technical terms in English).
+- **Plain language.** State the conclusion first, then a short reason. One idea
+  per sentence; keep sentences short. Gloss a technical term the first time you
+  use it. Prefer plain Korean over transliterated English (write "출처를 따라갈
+  수 있는지", not "추적성"). Prefer concrete verbs over abstract nouns.
+<!-- END shared-principles -->
+
+## Loop control
+
+- **state.json is the authority, not the conversation.** Whenever you need to
+  know where the loop stands, re-read
+  `docs/agent/loops/<loop-id>/state.json`. Do not rely on what the conversation
+  remembers — in a long session that memory is the first thing to go. Field
+  spec: `../../shared/state.md`.
+- **Side requests do not move the loop.** If the user asks for something
+  outside the current stage, do it without touching `state.json`. When it is
+  done, say in one line where the loop stands. Do not resume on your own — the
+  user decides when to continue.
+- Update `state.json` on every stage transition, escalation, and job start.
 
 ## Project Layout & Wiki
 
-The doc layout (`docs/` tree), the `knowledge/` vs `guidance/` split, and the
-`loop-id` convention live in `references/llm-wiki.md` ("Layout — what goes
-where"). The **LLM wiki** (`docs/agent/knowledge/`, ADRs in
-`knowledge/decisions/`) keeps project context current across loops; its writing
-principles and update procedure are in the same file, and it is maintained at
-each loop's wrap-up (`references/wrap-up.md`).
-
-## state.json
-
-`docs/agent/loops/<loop-id>/state.json` is the minimum for resume-after-
-interruption and handoff. Update it on every stage transition, escalation, and
-job start. Full field spec: `references/state.md`.
+The docs tree, the knowledge/guidance split, the `loop-id` convention, and the
+rules for which document a fact belongs in all live in the `experiment-wiki`
+skill. **Invoke it** when you need them — do not restate them here.
 
 ## Templates
 
-Copy the matching template when creating a document — see **Template compliance
-(binding)** under Shared Principles for the rules (keep every section, fill each,
-remove all guidance markers, no placeholders). Templates: `prd.md`,
+Copy the matching template from `../../shared/templates/` when creating a
+document — see **Template compliance (binding)** under Shared Principles for
+the rules (keep every section, fill each, remove all guidance markers, no
+placeholders). Templates: `prd.md`,
 `experiment-design-doc.md`, `tech-design-spec.md`, `task-spec.md`,
 `implementation-plan.md`, `experiment-report.md`, `project-report.md`,
 `experiment-ledger.md`, `code-map.md`, `artifact-map.md`, `decision-record.md`,
