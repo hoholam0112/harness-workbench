@@ -66,16 +66,16 @@ the code structure, the experiment/training entry points, and the test setup
 
 ## Deliverables
 
-- Doc layout per `references/llm-wiki.md` "Layout — what goes where", adapted to
-  the project's existing conventions.
+- Doc layout per the `experiment-wiki` skill's "Layout — what goes where"
+  section, adapted to the project's existing conventions.
 - `docs/glossary.md` — terminology used in the project and by the user
   (the one document where Korean is allowed).
 - `docs/index.md` — what every document is for and when an agent should read
   it, including the layout decisions made here. Later stages navigate by
   this file. It also marks the **always-read core**: the small set of knowledge
   docs holding must-know project facts and constraints that every stage reads
-  every time (see `references/llm-wiki.md` "Always-read core"). Seed this set
-  with the core facts learned during onboarding.
+  every time (see the `experiment-wiki` skill's "Always-read core" section).
+  Seed this set with the core facts learned during onboarding.
 - `docs/CONVENTIONS.md` — the wiki's rules: document authority (human `raw/`
   is top authority), priority when sources disagree, and the frontmatter spec.
 - Seeded `docs/agent/knowledge/` — initial knowledge documents filled from the
