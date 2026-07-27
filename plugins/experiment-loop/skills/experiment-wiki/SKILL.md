@@ -200,7 +200,7 @@ a fact written but not marked core can still be skipped.
    - A rule about HOW the agent should work (a correction or preference to
      carry forward) → `docs/agent/guidance/human-feedback.md`.
    - A choice about WHAT to build or run, and why → an ADR in
-     `docs/agent/knowledge/decisions/` (`templates/decision-record.md`).
+     `docs/agent/knowledge/decisions/` (`../../shared/templates/decision-record.md`).
    - A current fact about the project (new/changed behavior, config, data) →
      update the relevant `docs/agent/knowledge/` doc in place.
 
