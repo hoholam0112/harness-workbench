@@ -56,6 +56,11 @@ Paths below are relative to this skill's own directory.
 
 ## Must read first
 
+If this skill was not invoked by the experiment loop (e.g. the user asked for
+a report directly), determine the current loop from the most recent
+`docs/agent/loops/*/state.json` — directories sort chronologically by name, so
+the last one is the current loop.
+
 - this loop's `experiment-design.md` — the acceptance criteria and the serving
   targets in its Constraints, which the reports judge results against;
 - this loop's `tech-design-spec.md` — the metrics and thresholds;
@@ -68,7 +73,7 @@ Paths below are relative to this skill's own directory.
 
 ## Report
 
-This stage produces **two** reports, each written as markdown (the gated source)
+This skill produces **two** reports, each written as markdown (the gated source)
 then rendered to HTML: the **loop report** — this loop's experiment — and the
 **project report** — the whole project across all loops. Produce both, then ask
 the user to review them together.
@@ -144,7 +149,10 @@ as it stands now.
 
 ### Then
 
-7. Request user review of **both** reports (`status: awaiting_user_review`).
+7. Request user review of **both** reports. If the experiment loop called this
+   skill, set `status: awaiting_user_review`; otherwise just hand the reports
+   to the user — a standalone invocation must not touch `state.json`, since
+   that would move the loop's position without the loop asking for it.
 
 ## HTML rendering
 
