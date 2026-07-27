@@ -38,6 +38,15 @@ experiment-wiki: 같음
 
 ## 검증 2: 끊긴 참조 검사
 
+첫 검증 때는 이 검사를 `skills/` 아래 `../../shared/...` 경로 하나로만 했다. 그 뒤
+최종 전체 브랜치 리뷰에서 이 검사가 놓친 것이 두 개 나왔다: `shared/templates/`
+안에 있는, 옮겨진 파일을 가리키는 낡은 포인터 하나(아래 2-2), 그리고 이름이 바뀐
+절 제목을 그대로 가리키는 낡은 포인터 여덟 개(아래 2-3). 원인은 검사 범위가
+`skills/`로 좁았고 `shared/` 자체는 스윕한 적이 없었기 때문이다. 아래처럼 범위를
+플러그인 전체로 넓히고, 절 제목 검사를 추가했다.
+
+### 2-1. skills/ → shared/ 경로 존재 검사
+
 Run:
 
 ```bash
@@ -72,7 +81,60 @@ OK   ../../shared/verification-gate.md
 **판정: 통과.** `skills/` 아래에서 `../../shared/...` 형태로 쓰인 경로 16개 전부
 실제 파일/디렉토리로 존재한다. `principles-inline.md`는 `../../shared/...` 참조로
 쓰이지 않으므로(내용만 복사해 넣는 원본이라 skills에서 경로로 참조하지 않음) 이 표에
-안 나오는 것이 맞다.
+안 나오는 것이 맞다. 이 검사만으로는 `shared/` 자체 안의 낡은 포인터를 잡지
+못한다 — 아래 2-2가 그 구멍을 메운다.
+
+### 2-2. shared/ 안의 낡은 경로 스윕 (넓힌 부분)
+
+`shared/`의 파일들은 여러 스킬이 함께 쓰는데, 그 안에 `references/foo.md`나
+`templates/`를 가리키는 문구가 있으면 어느 스킬 기준인지 불분명하고 옮겨졌을 때
+끊어지기 쉽다. 첫 검증에서는 이 디렉토리를 스윕한 적이 없어서, `shared/templates/
+experiment-report.md`가 이미 사라진 `references/experiment.md`의 "HTML
+rendering" 절을 가리키던 것을 잡지 못했다(수정 완료, 지금은 `experiment-report`
+스킬을 가리킨다).
+
+Run:
+
+```bash
+cd /Users/zeroman0112/Projects/agentic_loop_factory/plugins/experiment-loop
+grep -rnE 'references/[a-z-]+\.md|(^|[^/`])templates/' shared/
+```
+
+결과 (수정 후, 출력 없음 = 통과):
+
+```
+(no output)
+```
+
+**판정: 통과.** `shared/` 안에 대상 프로젝트 자신의 문서 트리(`docs/agent/…`,
+`docs/human/…`, `docs/shared/…`)를 가리키는 경로는 이 패턴에 안 걸리므로 그대로
+둔다 — 이 검사가 잡아야 하는 것은 옮겨진 스킬 내부 파일을 가리키는 포인터뿐이다.
+
+### 2-3. 오래된 절 이름 포인터 검사 (신규)
+
+과제 2에서 인라인 블록의 항목 두 개 이름이 바뀌었다(`Progressive context
+loading, with an always-read core` → `Always-read core`, `Capture durable
+facts on the spot` → `Durable facts go to the wiki immediately`). 그런데
+그 항목을 이름으로 가리키던 참조 여덟 곳은 이름을 바꾸지 않고 남아 있었다 —
+검증 2-1은 `../../shared/...` 형태의 경로만 봐서 이런 텍스트 포인터는 애초에
+검사 대상이 아니었다.
+
+Run:
+
+```bash
+cd /Users/zeroman0112/Projects/agentic_loop_factory/plugins/experiment-loop
+grep -rn "Progressive context loading\|Capture durable facts on the spot" .
+```
+
+결과 (수정 후, 출력 없음 = 통과):
+
+```
+(no output)
+```
+
+**판정: 통과.** `skills/experiment-loop/references/`의 여섯 파일과
+`skills/experiment-wiki/SKILL.md`가 전부 새 이름(`Always-read core`,
+`Durable facts go to the wiki immediately`)을 가리키도록 고쳤다.
 
 ## 요구사항 대응표
 
@@ -109,6 +171,15 @@ OK   ../../shared/verification-gate.md
   "Clarify the overall requirement with the user"는 0.5단계 전용이라 이 규칙과
   무관). glossary.md를 항상 읽는다는 지시는 인라인 블록에 남았지만, 뜻이 안 맞을 때
   되묻는 절차는 옮기는 과정에서 빠졌다.
+
+  **복구됨 (커밋 `c352011`).** 최종 전체 브랜치 리뷰에서 이 항목이 지적되어,
+  `shared/principles-inline.md`의 "Always-read core" 항목에 한 문장을 더해
+  복구했다: 용어를 glossary와 맞춰보고, 사용자가 쓴 용어의 뜻이 불분명하면 짐작하지
+  않고 되묻는다는 내용. 이 블록은 다섯 파일(`principles-inline.md` + 네 SKILL.md)
+  전부에 바이트 단위로 동일해야 하므로, 원본을 고친 뒤 같은 내용을 네 SKILL.md의
+  마커 구간에 그대로 옮겨 다섯 파일 모두 같은 해시가 되는 것까지 확인했다. 이
+  항목을 지우지 않고 남겨두는 이유는, 무엇이 빠졌고 언제 복구됐는지의 기록 자체가
+  요점이기 때문이다.
 
 ## 행동 시험
 
