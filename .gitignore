@@ -1,3 +1,4 @@
 .DS_Store
 skills/concept-slides/tests/out/
 .playwright-mcp/
+.claude/worktrees/
