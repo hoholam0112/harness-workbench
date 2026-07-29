@@ -957,7 +957,7 @@ git commit -m "test(concept-slides): record expected checker violations"
   <section class="slide" data-kind="cover">
     <p class="eyebrow">자바스크립트 실행 모델 · 3장</p>
     <h1 class="headline">한 줄씩만 돌리는 언어가 <span class="hl">기다리지 않는</span> 법</h1>
-    <p class="meta">읽는 데 약 90분 · 학습목표 2개</p>
+    <p class="meta">읽는 데 약 20분 · 학습목표 2개</p>
   </section>
 
   <section class="slide" data-kind="opening">
@@ -1078,8 +1078,8 @@ console.log('4');</code></pre>
       </div>
       <ul class="pain">
         <li>버튼을 누르면 스피너를 켜는 코드를 먼저 넣었다.</li>
-        <li>바로 뒤에서 큰 배열을 정렬한다.</li>
-        <li>스피너는 정렬이 끝난 뒤에야 한 번 깜빡이고 사라진다.</li>
+        <li>바로 뒤에서 항목 수십만 개의 점수를 훑어 계산한다.</li>
+        <li>스피너가 켜진 화면은 단 한 프레임도 나타나지 않는다.</li>
       </ul>
     </div>
   </section>
@@ -1087,7 +1087,16 @@ console.log('4');</code></pre>
 
 `.pain` 불릿은 6개를 넘기면 위반이다. 불릿은 **하한에 세어지지 않는다** — `.prose`가 인과를 져야 한다.
 
-`precise` 장은 렌더링이 왜 태스크 사이에만 끼는지, `example` 장은 같은 정렬을 `setTimeout`으로 쪼개면 스피너가 도는 코드를 보여준다.
+`precise` 장은 렌더링이 왜 태스크 사이에만 끼는지, `example` 장은 같은 계산을
+`setTimeout`으로 쪼개면 스피너가 도는 코드를 보여준다.
+
+**무거운 일은 이어받을 수 있는 반복문이어야 한다.** `Array.prototype.sort`처럼
+한 번의 동기 호출로 끝나는 것은 중간 상태에서 멈추고 이어받을 수 없어서 조각낼 수
+없다. 정렬을 예로 쓰면 `example` 장이 거짓이 된다. 인덱스를 이어받는 훑기 루프를 쓴다.
+
+**스피너는 "한 번 깜빡"이 아니다.** 켜는 줄과 끄는 줄이 같은 태스크 안에 있으면
+그 태스크가 끝난 뒤 처음 그릴 때 스피너는 이미 꺼져 있다. **켜진 스피너가 보이는
+순간이 아예 없다.** 산문·불릿·`example` 장이 이 한 가지로 일치해야 한다.
 
 - [ ] **Step 4: 닫기 장을 쓴다**
 
@@ -1107,7 +1116,10 @@ console.log('4');</code></pre>
   </section>
 ```
 
-**퀴즈는 앞 장 문장을 그대로 묻지 않는다. 적용을 묻는다.** 예를 들어 g1은 `setTimeout` 안에서 `Promise`를 만드는 코드의 출력 순서를 묻고, g2는 "정렬을 몇 조각으로 쪼개면 되는가"가 아니라 "왜 쪼개면 스피너가 도는가"를 묻는다. 목표만 읽고 풀리는 퀴즈면 자료가 필요 없는 퀴즈다.
+**퀴즈는 앞 장 문장을 그대로 묻지 않는다. 적용을 묻는다.** 예를 들어 g1은 `setTimeout` 안에서 `Promise`를 만드는 코드의 출력 순서를 묻고, g2는 챕터가 걸어보지 않은 상황을 준다 — 조각을 `queueMicrotask`로 이은 코드와
+조각마다 `await fetch(...)`를 하는 코드를 나란히 주고 어느 쪽에서 스피너가 도는지
+묻는다(뒤쪽만 태스크를 실제로 끝내므로 돈다). **`pitfall` 장이 이미 답한 것을
+되묻지 않는다.** 목표만 읽고 풀리는 퀴즈면 자료가 필요 없는 퀴즈다.
 
 `<details>` 내부는 하한에 세어지지 않는다. 답을 길게 써도 산문 총량은 안 늘어난다.
 
@@ -1134,6 +1146,83 @@ Expected: 견본은 목표 2개짜리라 90~120분에 못 미친다. **50분 미
 ```bash
 git add skills/concept-slides/assets/deck.html
 git commit -m "feat(concept-slides): replace the sample deck with a goal-driven chapter"
+```
+
+---
+
+### Task 12b: 레이아웃 CSS를 새 어휘로 옮긴다
+
+**Files:**
+- Modify: `skills/concept-slides/assets/deck.html` (`<style>`의 "표지 / 섹션 구분" 블록과 예시 챕터의 `goal` 장 두 곳)
+- Modify: `skills/concept-slides/tests/README.md`
+
+**Interfaces:**
+- Consumes: Task 12의 예시 챕터
+- Produces: `goal` 장이 마크업에 헬퍼 클래스를 붙이지 않아도 제 모양으로 나온다
+
+**왜 이 작업이 있는가** — Task 2~8이 `data-kind` 어휘를 갈았는데 **레이아웃 CSS는 아무도
+안 옮겼다.** 계획의 빈틈이었고 Task 12에서 드러났다. 지금 CSS는 폐기된 `section`과
+`define`을 기준으로 가운데 정렬을 걸고 있고, 새 `goal` 장에는 규칙이 없다. 그래서 Task 12가
+`class="slide center"`로 우회했다 — 정당한 헬퍼지만, **견본이 우회를 물려주므로** `goal`
+장을 새로 쓰는 사람은 클래스를 빼먹고 위로 붙은 구분 장을 얻는다. 검사기는 아무 말도 안 한다.
+
+- [ ] **Step 1: 죽은 선택자를 새 어휘로 바꾼다**
+
+`deck.html:96-103`의 두 블록을 다음으로 바꾼다. `section`과 `define`은 폐기된 값이라
+어떤 슬라이드도 그 선택자에 걸리지 않는다.
+
+```css
+/* ── 표지 / 목표 구분 ─────────────────────────────────── */
+.slide[data-kind="cover"], .slide[data-kind="goal"] { justify-content: center; gap: .6em; }
+.slide[data-kind="cover"] .headline { font-size: 2.6em; max-width: 18em; }
+.slide[data-kind="goal"] { align-items: center; text-align: center; }
+.slide[data-kind="goal"] .headline { font-size: 2.2em; }
+.slide[data-kind="cover"] .meta { color: var(--ink-2); font-size: .85em; }
+```
+
+`.lede` 위의 `.slide[data-kind="define"] { justify-content: center; }` 한 줄은 **지운다.**
+`define`은 폐기됐고, `.lede`는 이제 어느 장에서든 쓸 수 있는 큰 타이포 클래스다.
+
+`goal` 장에 헤드라인 확대(2.2em)를 주는 이유는 구분 장 제목이 본문 제목과 같은 크기면
+구분이 안 되기 때문이다 — 폐기된 `section`에 있던 규칙을 그대로 옮겨 온다.
+
+- [ ] **Step 2: 예시 챕터에서 우회를 걷어낸다**
+
+`goal` 장 두 곳의 `class="slide center"`를 `class="slide"`로 되돌린다. Step 1이 같은 일을
+CSS로 하므로 헬퍼가 필요 없다. **견본에 우회가 남아 있으면 CSS를 고친 뒤에도 계속 복사된다.**
+
+`.center` 헬퍼 자체는 지우지 않는다 — 다른 장에서 쓸 수 있는 일반 헬퍼다.
+
+- [ ] **Step 3: 눈으로 확인한다**
+
+`skills/concept-slides`에서 `python3 -m http.server 8791`을 띄우고
+`http://localhost:8791/assets/deck.html#3`(g1 구분 장)과 `#9`(g2 구분 장)를 연다.
+
+Expected: 제목이 화면 가운데에 있고 본문 제목보다 크다. Step 2로 클래스를 뺐는데도
+Step 1 전과 같은 모양이다. 스크린샷을 남긴다.
+
+- [ ] **Step 4: 게이트가 안 움직였는지 확인한다**
+
+Run: 브라우저에서 `assets/deck.html`의 `__deckCheck()`
+Expected: `[]`
+
+Run: `node tests/build.mjs broken` 후 `tests/out/broken.html`의 `__deckCheck()`
+Expected: 14건
+
+**CSS가 슬라이드 레이아웃을 바꾸므로 넘침이 새로 생길 수 있다.** 생기면 글을 깎지 말고
+레이아웃을 고친다.
+
+- [ ] **Step 5: `tests/README.md`의 낡은 단락을 고친다**
+
+"현재 상태" 단락이 아직 "`assets/deck.html`을 그대로 열면 지금도 위반이 나온다"고 적고
+있다. Task 12가 끝났으므로 **이제 거짓이다.** 그 단락을 지우고, 대조군 표의
+`assets/deck.html` 줄을 "위반 0건"으로 고친다.
+
+- [ ] **Step 6: 커밋**
+
+```bash
+git add skills/concept-slides/assets/deck.html skills/concept-slides/tests/README.md
+git commit -m "fix(concept-slides): move layout CSS to the new data-kind vocabulary"
 ```
 
 ---
