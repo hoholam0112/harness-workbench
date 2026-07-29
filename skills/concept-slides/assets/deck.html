@@ -585,9 +585,10 @@ web   <span class="k">2/2</span>    Running</code></pre>
   go((parseInt(location.hash.slice(1), 10) || 1) - 1, false);
 
   /* ── 자기검사 ────────────────────────────────────────────
-     이건 읽는 자료다. 옛 120자 "상한"은 폐기했다 — 발표자가 말로
-     채운다는 전제가 사라졌기 때문이다. 대신 문단 "하한"을 건다.
-     하한은 .prose 문단만 센다. 불릿·표·코드로는 통과할 수 없다. */
+     이 검사기는 장 모양이 아니라 학습 연결(목표 ↔ 설명 장 ↔ 퀴즈)을 본다.
+     장 단위 산문 하한은 폐기했다. 하한은 목표 단위 하나(1200자)로 옮겨가고
+     챕터 열기 장만 따로 400자를 받는다 — 둘 다 뒤 작업에서 붙는다.
+     집계는 .prose 만 센다. <details> 내부는 세지 않는다 — proseLen이 이를 구현한다. */
   const TOPIC_TITLE = /(개요|소개|이란|이란\?|란\?|의 구조|의 특징|의 종류|의 장점|정리하면)\s*$/;
   const KNOWN_KINDS = ['cover', 'opening', 'goal', 'intro', 'precise', 'example', 'pitfall', 'closing'];
   const GOAL_KINDS  = ['goal', 'intro', 'precise', 'example', 'pitfall'];
