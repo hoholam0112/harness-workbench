@@ -613,6 +613,8 @@ web   <span class="k">2/2</span>    Running</code></pre>
       const kind = s.dataset.kind || '?';
       const at = `${n + 1}번(${kind})`;
       const add = (m) => issues.push(`${at}: ${m}`);
+      if (!KNOWN_KINDS.includes(kind))
+        add(`data-kind="${kind}"는 모르는 값이다 — ${KNOWN_KINDS.join(' / ')} 중 하나여야 한다`);
 
       if (s.scrollHeight - s.clientHeight > 2) add(`세로로 ${s.scrollHeight - s.clientHeight}px 넘침 — 레이아웃을 고쳐라. 글을 깎지 마라`);
       if (s.scrollWidth - s.clientWidth > 2) add('가로로 넘침');
