@@ -619,6 +619,10 @@ web   <span class="k">2/2</span>    Running</code></pre>
       const add = (m) => issues.push(`${at}: ${m}`);
       if (!KNOWN_KINDS.includes(kind))
         add(`data-kind="${kind}"는 모르는 값이다 — ${KNOWN_KINDS.join(' / ')} 중 하나여야 한다`);
+      if (GOAL_KINDS.includes(kind) && !s.dataset.goal)
+        add('설명 장인데 data-goal이 없다 — 어느 목표에 속하는지 알 수 없어 3박자·퀴즈 검사에서 통째로 빠진다');
+      if (NO_GOAL_KINDS.includes(kind) && s.dataset.goal)
+        add(`data-goal="${s.dataset.goal}"을 붙일 장이 아니다 — ${kind} 장은 목표에 속하지 않는다`);
 
       if (s.scrollHeight - s.clientHeight > 2) add(`세로로 ${s.scrollHeight - s.clientHeight}px 넘침 — 레이아웃을 고쳐라. 글을 깎지 마라`);
       if (s.scrollWidth - s.clientWidth > 2) add('가로로 넘침');
@@ -673,6 +677,21 @@ web   <span class="k">2/2</span>    Running</code></pre>
       const chars = proseLen(s);
       if (chars < 400)
         issues.push(`열기 장 산문 ${chars}자 (하한 400) — 왜 이걸 배우는지, 건너뛰면 뒤에서 무엇이 막히는지 문단으로 써라`);
+    });
+
+    // ── 목표 ↔ 장 연결 ───────────────────────────────────
+    const goals = declaredGoals();
+    const bodyOf = (g) => slides.filter(s => s.dataset.goal === g && BODY_KINDS.includes(s.dataset.kind));
+
+    slides.forEach((s, n) => {
+      const g = s.dataset.goal;
+      if (g && !goals.includes(g))
+        issues.push(`${n + 1}번(${s.dataset.kind}): data-goal="${g}"가 열기 장에 선언되지 않았다 — 미아 장이다`);
+    });
+
+    goals.forEach(g => {
+      if (!bodyOf(g).length)
+        issues.push(`학습목표 "${g}": 설명하는 장이 하나도 없다 — 선언만 하고 안 가르쳤다`);
     });
 
     document.body.className = cw;
