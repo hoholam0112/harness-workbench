@@ -648,6 +648,11 @@ web   <span class="k">2/2</span>    Running</code></pre>
       if (!head) add('제목이 없다');
       else if (TOPIC_TITLE.test(head.textContent.replace(/\s+/g, ' ').trim()))
         add(`제목이 주제어다 — 완결된 문장으로 바꿔라 ("${head.textContent.trim().slice(0, 20)}…")`);
+
+      if (s.hasAttribute('data-analogy')) {
+        if (!s.querySelector('.map')) add('비유를 썼다고 표시했는데 매핑표(.map)가 없다 — Y의 어느 부분이 X의 무엇인지 밝혀라');
+        if (!s.querySelector('.caveat')) add('비유를 썼다고 표시했는데 "깨지는 지점"(.caveat)이 없다 — 독자가 비유를 사실로 믿는다');
+      }
     });
 
     // ── 챕터 열기 장 ─────────────────────────────────────
@@ -731,12 +736,26 @@ web   <span class="k">2/2</span>    Running</code></pre>
     document.body.className = cw;
     if (hash) location.hash = hash;
     render();
+
+    // ── 학습 시간 추정 (위반이 아니다. issues 에 넣지 않는다) ──
+    const proseAll = slides.reduce((n, s) => n + proseLen(s), 0);
+    const codeLines = [...document.querySelectorAll('.slide pre')]
+      .reduce((n, p) => n + p.textContent.trim().split('\n').length, 0);
+    const figures = document.querySelectorAll('.slide svg').length;
+    const quizzes = document.querySelectorAll('.quiz').length;
+    const minutes = Math.round(proseAll / 400 + codeLines * 0.1 + figures * 0.5 + quizzes);
+    window.__deckStats = { minutes, prose: proseAll, codeLines, figures, quizzes };
+
     return issues;
   }
   window.__deckCheck = check;
   const found = check();
+  const st = window.__deckStats;
+  console.info(`[concept-slides] 슬라이드 ${slides.length}장 · 추정 학습 시간 약 ${st.minutes}분 (산문 ${st.prose}자, 코드 ${st.codeLines}줄, 그림 ${st.figures}개, 퀴즈 ${st.quizzes}개)`);
+  if (st.minutes < 50 || st.minutes > 140)
+    console.warn(`[concept-slides] 추정 학습 시간 ${st.minutes}분 — 목표는 60~120분이다. 위반은 아니지만 커리큘럼의 챕터 분할을 다시 봐라`);
   if (found.length) console.warn('[concept-slides] 품질 게이트 위반 ' + found.length + '건:\n' + found.map(s => ' • ' + s).join('\n'));
-  else console.info('[concept-slides] 품질 게이트 통과 — 슬라이드 ' + slides.length + '장');
+  else console.info('[concept-slides] 품질 게이트 통과');
 })();
 </script>
 </body>
