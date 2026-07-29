@@ -193,6 +193,10 @@ A1에서 받은 출력 폴더에 `curriculum.md`를 만든다. 이 파일이 호
 퀴즈는 `<details class="quiz" data-goal="gN">`이고 목표마다 하나 이상이다.
 **위치는 검사하지 않는다** — 닫기 장에 모아도 되고 각 목표 끝에 둬도 된다.
 
+목표 끝에 둘 때는 그 목표의 설명 장 안에 `.quiz`를 넣는다. 퀴즈만 담은 `closing`
+장을 목표 중간에 끼우지 않는다 — `closing`에는 `data-goal`을 못 붙이므로 그 장이
+어느 목표의 것인지 표시할 방법이 없다.
+
     <section class="slide" data-kind="closing">
       <h2 class="headline">이 세 줄이 남으면 이 장은 값을 한 것이다</h2>
       <div class="split wide-right">
