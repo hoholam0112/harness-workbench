@@ -715,6 +715,19 @@ web   <span class="k">2/2</span>    Running</code></pre>
       }
     });
 
+    // ── 목표별 퀴즈와 산문 총량 ──────────────────────────
+    goals.forEach(g => {
+      const quizzes = document.querySelectorAll(`.quiz[data-goal="${g}"]`).length;
+      if (!quizzes)
+        issues.push(`학습목표 "${g}": 확인 퀴즈가 없다 — <details class="quiz" data-goal="${g}"> 를 하나 이상 둬라. 목표를 세웠으면 확인해야 한다`);
+
+      const chars = slides
+        .filter(s => s.dataset.goal === g)
+        .reduce((n, s) => n + proseLen(s), 0);
+      if (chars < 1200)
+        issues.push(`학습목표 "${g}": 산문 ${chars}자 (하한 1200) — 말로 보충해야 이해되는 상태다. 장을 늘려도 되고 한 장을 길게 써도 된다`);
+    });
+
     document.body.className = cw;
     if (hash) location.hash = hash;
     render();
