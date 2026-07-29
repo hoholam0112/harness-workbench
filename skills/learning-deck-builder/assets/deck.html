@@ -1,0 +1,1045 @@
+<!doctype html>
+<!--
+  learning-deck-builder 뼈대 — 이 파일을 복사해서 <section class="slide"> 내용만 바꿔 쓴다.
+  CSS/JS는 손대지 않는다. 아래 예시 슬라이드는 전부 지우고 실제 내용으로 교체.
+
+  이 파일에 들어 있는 예시 챕터는 견본이다. 학습목표 2개짜리라 학습 시간과 목표 개수
+  안내가 콘솔에 뜬다. 실제 챕터는 목표 4~6개, 60~70장, 60~120분이다. 이 안내는
+  위반이 아니다.
+
+  조작: ← → Space PageUp/Dn Home/End | o 오버뷰 | t 테마 | f 전체화면 | ? 도움말
+  인쇄(Cmd/Ctrl+P) → 1페이지 = 1슬라이드로 PDF 저장됨.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>이벤트 루프 — 자바스크립트 실행 모델 3장</title>
+<style>
+/* ── 테마 ─────────────────────────────────────────────── */
+:root {
+  --bg: #fbfaf8;   --panel: #ffffff;  --ink: #16181d;   --ink-2: #565d6b;
+  --line: #dfdcd5;  --accent: #1f6feb; --accent-soft: #e7f0fe;
+  --warn: #b4530a;  --warn-soft: #fdf1e3; --code-bg: #f3f1ec;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14161a;  --panel: #1b1e24;  --ink: #eceef2;   --ink-2: #a0a7b4;
+    --line: #333842; --accent: #6ea8fe; --accent-soft: #1c2b45;
+    --warn: #e8a15c; --warn-soft: #33261a; --code-bg: #22262d;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="light"] {
+  --bg: #fbfaf8;  --panel: #fff;     --ink: #16181d;   --ink-2: #565d6b;
+  --line: #dfdcd5; --accent: #1f6feb; --accent-soft: #e7f0fe;
+  --warn: #b4530a; --warn-soft: #fdf1e3; --code-bg: #f3f1ec;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.06);
+}
+:root[data-theme="dark"] {
+  --bg: #14161a;  --panel: #1b1e24;  --ink: #eceef2;   --ink-2: #a0a7b4;
+  --line: #333842; --accent: #6ea8fe; --accent-soft: #1c2b45;
+  --warn: #e8a15c; --warn-soft: #33261a; --code-bg: #22262d;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+}
+
+/* ── 기본 ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+               "Segoe UI", system-ui, "Malgun Gothic", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  display: grid; place-items: center;
+  overflow: hidden;
+}
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+
+/* ── 무대 ─────────────────────────────────────────────── */
+.stage {
+  --h: 100vh;
+  container-type: size;    /* .slide가 cqw로 무대 크기를 참조한다 (자기 자신은 참조 못 하므로 부모에 건다) */
+  position: relative;
+  width: min(100vw, calc(var(--h) * 1.77778));
+  height: min(var(--h), 56.25vw);
+}
+.slide {
+  position: absolute; inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+  /* 무대 폭의 1.4%. 발표용(2.3%)에서 낮췄다 — 이건 읽는 자료다. ≈18px @1280 */
+  font-size: 1.4cqw; line-height: 1.7;
+  display: flex; flex-direction: column;
+  gap: .8em;
+  padding: 2.2em 2.6em 2.1em;   /* 하단은 HUD를 피할 만큼만 */
+  word-break: keep-all;      /* 한글은 단어 중간에서 끊지 않는다 */
+  overflow-wrap: anywhere;   /* 단, 긴 영문/URL은 예외적으로 끊음 */
+}
+/* UA의 [hidden]{display:none}은 위 display:flex에 밀린다. 작성자 규칙으로 다시 세운다. */
+.slide[hidden] { display: none; }
+
+/* ── 헤드라인 = 완결된 문장 (Assertion) ───────────────── */
+.headline {
+  margin: 0; font-size: 1.85em; line-height: 1.28;
+  font-weight: 700; letter-spacing: -.02em;
+  max-width: 26em; text-wrap: balance;
+}
+.headline .hl { color: var(--accent); }
+.eyebrow {
+  margin: 0; font-size: .72em; font-weight: 600; letter-spacing: .1em;
+  color: var(--ink-2); text-transform: uppercase;
+}
+.body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .8em; }
+.sub { margin: 0; color: var(--ink-2); font-size: 1em; max-width: 38em; }
+
+/* ── 표지 / 목표 구분 ─────────────────────────────────── */
+.slide[data-kind="cover"], .slide[data-kind="goal"] { justify-content: center; gap: .6em; }
+.slide[data-kind="cover"] .headline { font-size: 2.6em; max-width: 18em; }
+.slide[data-kind="goal"] { align-items: center; text-align: center; }
+.slide[data-kind="goal"] .headline { font-size: 2.2em; }
+.slide[data-kind="cover"] .meta { color: var(--ink-2); font-size: .85em; }
+
+/* ── 큰 한 줄 정의 — .headline 대신 쓰는 제목 ─────────── */
+.lede {
+  margin: 0; font-size: 2.35em; line-height: 1.3; font-weight: 700;
+  letter-spacing: -.02em; max-width: 20em; text-wrap: balance;
+}
+.lede em { font-style: normal; color: var(--accent); }
+
+/* ── intro 장: 독자가 겪어 본 상황 목록 ──────────────── */
+.pain { margin: 0; padding: 0 0 0 1em; list-style: none; display: grid; gap: .45em; }
+.pain li { position: relative; font-size: 1.15em; }
+.pain li::before {
+  content: ""; position: absolute; left: -1em; top: .62em;
+  width: .42em; height: .42em; border-radius: 50%; background: var(--ink-2);
+}
+.pain li:last-child { color: var(--warn); font-weight: 600; }
+.pain li:last-child::before { background: var(--warn); }
+
+/* ── 비유 매핑표 — data-analogy 장 필수 (주로 intro) ─── */
+.map { border-collapse: collapse; width: 100%; font-size: .92em; }
+.map th, .map td { text-align: left; padding: .4em .7em; border-bottom: 1px solid var(--line); }
+.map thead th { font-size: .82em; letter-spacing: .04em; color: var(--ink-2); font-weight: 600; }
+.map tbody td:first-child { color: var(--ink-2); }
+.map tbody td:last-child { font-weight: 600; }
+.map tbody tr:last-child td { border-bottom: 0; }
+
+/* 비유가 깨지는 지점 — 생략 금지 */
+.caveat {
+  border: 1px dashed var(--warn); background: var(--warn-soft);
+  border-radius: .5em; padding: .7em .9em; font-size: .9em;
+}
+.caveat b { color: var(--warn); display: block; margin-bottom: .2em; font-size: .92em; }
+
+/* ── 산문 — 문단 하한 계산의 유일한 기준 ─────────────── */
+.prose { margin: 0; max-width: 38em; }
+.prose + .prose { margin-top: .75em; }
+.prose em { font-style: normal; font-weight: 600; color: var(--accent); }
+
+/* ── precise 장: 메커니즘 단계 ───────────────────────── */
+.steps {
+  margin: 0; padding: 0; list-style: none;
+  counter-reset: s; display: grid; gap: .85em; max-width: 40em;
+}
+.steps li { counter-increment: s; position: relative; padding-left: 2.4em; }
+.steps li::before {
+  content: counter(s); position: absolute; left: 0; top: .1em;
+  width: 1.7em; height: 1.7em; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent);
+  font-size: .85em; font-weight: 700; display: grid; place-items: center;
+}
+.steps b { display: block; font-weight: 700; }
+/* 각 단계는 "무엇이 일어나는지" 다음에 "왜 그렇게 되는지"를 적는다 */
+.steps .why { color: var(--ink-2); }
+.steps .why::before { content: "왜 — "; color: var(--accent); font-weight: 600; }
+
+/* ── pitfall 장: 흔한 오해 ───────────────────────────── */
+.misconception { display: grid; gap: 1em; max-width: 42em; }
+.misconception > div { border-left: 3px solid var(--line); padding-left: 1em; }
+.misconception .myth { margin: 0 0 .3em; color: var(--warn); font-weight: 600; }
+.misconception .myth::before { content: "이렇게 생각하기 쉽다 — "; font-weight: 400; opacity: .75; }
+.misconception .fact { margin: 0; }
+.misconception .fact::before { content: "사실은 "; color: var(--accent); font-weight: 700; }
+
+/* ── 확인 퀴즈 — 목표마다 하나 (답을 접어둔다) ───────── */
+.quiz {
+  border: 1px solid var(--line); border-radius: .5em; background: var(--panel);
+  padding: .75em 1em; max-width: 42em;
+}
+.quiz summary { cursor: pointer; font-weight: 600; }
+.quiz summary::marker { color: var(--accent); }
+.quiz .prose { margin-top: .7em; color: var(--ink-2); }
+
+/* ── 레이아웃 헬퍼 ───────────────────────────────────── */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.6em; flex: 1; min-height: 0; align-items: center; }
+.split.wide-left  { grid-template-columns: 1.4fr 1fr; }
+.split.wide-right { grid-template-columns: 1fr 1.4fr; }
+.stack { display: flex; flex-direction: column; gap: .7em; min-width: 0; }
+.center { justify-content: center; align-items: center; text-align: center; }
+
+/* ── 시각자료 ────────────────────────────────────────── */
+.figure { flex: 1; min-height: 0; display: grid; place-items: center; }
+.figure svg { width: 100%; height: 100%; max-height: 100%; overflow: visible; }
+.figure figcaption { margin-top: .5em; font-size: .78em; color: var(--ink-2); text-align: center; }
+figure { margin: 0; }
+
+/* ── 코드 ────────────────────────────────────────────── */
+/* 가로 스크롤바가 보이면 결함이다. 독자는 스크롤할 수 없다 — 코드 줄을 줄여라.
+   2단 배치에서는 한 줄 40칸, 전체 폭에서는 70칸이 한계. */
+pre {
+  margin: 0; background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: .5em; padding: .8em 1em; overflow: auto;
+  font-size: .7em; line-height: 1.6; tab-size: 2;
+}
+pre .c { color: var(--ink-2); }         /* 주석 */
+pre .k { color: var(--accent); font-weight: 600; }  /* 키 / 키워드 */
+:not(pre) > code {
+  background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: .3em; padding: .08em .35em; font-size: .88em;
+}
+
+/* ── closing 장: 정리 (최대 3개) ─────────────────────── */
+.takeaways { margin: 0; padding: 0; list-style: none; counter-reset: t; display: grid; gap: .6em; }
+.takeaways li {
+  counter-increment: t; position: relative; padding-left: 2em;
+  font-size: 1.12em; font-weight: 500;
+}
+.takeaways li::before {
+  content: counter(t); position: absolute; left: 0; top: .1em;
+  width: 1.45em; height: 1.45em; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent);
+  font-size: .78em; font-weight: 700; display: grid; place-items: center;
+}
+
+/* 챕터 열기 장 — 이 챕터가 끝나면 할 수 있게 되는 것 */
+.outcomes { margin: 0; padding: 0; list-style: none; counter-reset: o; display: grid; gap: .55em; }
+.outcomes li {
+  counter-increment: o; position: relative; padding-left: 2em;
+  font-size: 1.08em; font-weight: 600;
+}
+.outcomes li::before {
+  content: counter(o); position: absolute; left: 0; top: .1em;
+  width: 1.4em; height: 1.4em; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--accent); color: var(--bg);
+  font-size: .72em; font-weight: 700;
+}
+.progress-note { color: var(--ink-2); font-size: .85em; }
+.progress-note a { color: var(--accent); }
+
+/* ── 뱃지 / 강조 ─────────────────────────────────────── */
+.tag {
+  display: inline-block; font-size: .7em; font-weight: 600; letter-spacing: .04em;
+  padding: .2em .6em; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent);
+}
+mark { background: var(--accent-soft); color: inherit; padding: .05em .2em; border-radius: .2em; }
+
+/* ── HUD ─────────────────────────────────────────────── */
+.hud {
+  position: fixed; left: 0; right: 0; bottom: 0; height: 2.4rem;
+  display: flex; align-items: center; gap: .9rem; padding: 0 1rem;
+  font-size: .72rem; color: var(--ink-2); pointer-events: none; z-index: 10;
+}
+.hud .bar { flex: 1; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.hud .bar i { display: block; height: 100%; background: var(--accent); transition: width .18s ease; }
+.hud .count { font-variant-numeric: tabular-nums; }
+.hud .hint { opacity: .55; }
+.hud .goalnow { color: var(--ink-2); opacity: .8; font-variant-numeric: tabular-nums; }
+
+#resume {
+  position: fixed; left: 50%; top: 1.1em; transform: translateX(-50%);
+  z-index: 30; display: flex; align-items: center; gap: .7em;
+  padding: .55em .9em; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--bg); box-shadow: 0 6px 24px rgb(0 0 0 / .18);
+  font-size: .82em;
+}
+#resume[hidden] { display: none; }
+#resume button {
+  font: inherit; cursor: pointer; padding: .3em .7em;
+  border: 1px solid var(--line); border-radius: 6px;
+  background: transparent; color: var(--ink);
+}
+#resume button:hover { border-color: var(--accent); color: var(--accent); }
+@media print { #resume { display: none !important; } }
+
+#help {
+  position: fixed; inset: 0; z-index: 20; display: none;
+  place-items: center; background: rgba(0,0,0,.45); backdrop-filter: blur(3px);
+}
+body.help-on #help { display: grid; }
+#help div {
+  background: var(--panel); border: 1px solid var(--line); border-radius: .7rem;
+  padding: 1.4rem 1.7rem; box-shadow: var(--shadow); font-size: .85rem; line-height: 2;
+}
+#help kbd {
+  font: inherit; font-family: ui-monospace, monospace; background: var(--code-bg);
+  border: 1px solid var(--line); border-radius: .25em; padding: .1em .4em; margin-right: .5em;
+}
+
+/* ── 오버뷰 (o) ──────────────────────────────────────── */
+body.overview { overflow: auto; display: block; }
+body.overview .stage {
+  container-type: normal;   /* 높이가 auto가 되므로 size 컨테이너를 해제한다 */
+  width: 100%; height: auto;
+  display: flex; flex-wrap: wrap; align-content: flex-start;
+  gap: 1rem; padding: 1rem 1rem 4rem;
+}
+body.overview .slide[hidden] { display: flex !important; }
+/* 썸네일은 원본 크기(1280×720)로 두고 zoom으로 축소한다. zoom은 transform과 달리
+   레이아웃 박스까지 줄여서 flex 배치가 그대로 맞는다. */
+body.overview .slide {
+  position: relative; inset: auto;
+  width: 1280px; height: 720px; font-size: 17.92px;
+  zoom: .21;
+  border: 1px solid var(--line); border-radius: 1.5rem; cursor: pointer;
+}
+body.overview .slide.is-active { outline: 2px solid var(--accent); outline-offset: 2px; }
+body.overview .hud .hint::after { content: " — 클릭해서 이동"; }
+
+/* ── 인쇄 → PDF ──────────────────────────────────────── */
+@page { size: landscape; margin: 0; }
+@media print {
+  html, body { height: auto; overflow: visible; display: block; background: #fff; }
+  .hud, #help { display: none !important; }
+  .stage { container-type: normal; width: 100%; height: auto; display: block; }
+  .slide[hidden] { display: flex !important; }
+  .slide {
+    position: relative; inset: auto; width: 100%; aspect-ratio: 16/9;
+    font-size: 1.4vw; zoom: 1;
+    break-after: page; page-break-after: always; box-shadow: none; border: 0;
+  }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<main class="stage" id="stage">
+  <section class="slide" data-kind="cover">
+    <p class="eyebrow">자바스크립트 실행 모델 · 3장</p>
+    <h1 class="headline">한 줄씩만 돌리는 언어가 <span class="hl">기다리지 않는</span> 법</h1>
+    <p class="meta">읽는 데 약 20분 · 학습목표 2개 · 구조를 보여주는 견본</p>
+  </section>
+
+  <section class="slide" data-kind="opening">
+    <h2 class="headline">이 장을 지나면 "왜 순서가 이렇게 나오죠"를 스스로 답할 수 있다</h2>
+    <div class="split wide-left">
+      <div class="stack">
+        <p class="prose">데이터를 받아 화면에 넣는 코드를 쓰고, 확인용으로 그 아래에
+        로그 한 줄을 넣어 본 적이 있을 것이다. 나중에 쓴 줄인데 먼저 찍힌다. 위에서 쓴
+        <code>then</code> 안의 로그가 그다음에 나오고, 타이머에 넣은 로그가 맨 끝에
+        나온다. 대부분은 "비동기라서 그렇구나"에서 정리를 멈춘다. 그러면 다음에 순서가
+        하나만 달라져도 다시 처음부터 헤맨다.</p>
+        <p class="prose">이 순서를 규칙으로 말할 수 있으면 뒤에서 세 가지가 풀린다.
+        <code>await</code>는 새 문법이 아니라 이 규칙 위에 얹힌 껍데기여서, 큐 순서를
+        모르면 다음 줄이 언제 돌아오는지 감으로 찍게 된다. 스피너가 안 돌거나 입력이
+        씹히는 문제도 대개 코드가 느려서가 아니라 큐를 놓아주지 않아서 생긴다. 경쟁
+        상태를 디버깅할 때는 어느 시점에 무엇이 이미 실행됐는지 셀 수 있어야 한다. 로그를
+        아무리 많이 찍어도 순서 규칙이 없으면 그 로그를 해석할 수 없다.</p>
+      </div>
+      <div class="stack">
+        <ul class="outcomes">
+          <li data-goal="g1">setTimeout 0과 Promise.resolve().then 중 무엇이 먼저 실행되는지 근거를 들어 고를 수 있다</li>
+          <li data-goal="g2">화면이 멈추는 코드와 안 멈추는 코드를 구분할 수 있다</li>
+        </ul>
+        <p class="progress-note">전체 8장 중 3번째 · 앞: 함수 호출과 콜 스택 · 다음: async/await가 풀리는 순서</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="goal" data-goal="g1">
+    <p class="eyebrow">학습목표 1</p>
+    <h2 class="headline">먼저 줄 선 일이 먼저 처리되는 게 아니다</h2>
+  </section>
+
+  <section class="slide" data-kind="intro" data-goal="g1" data-analogy>
+    <h2 class="headline">창구 하나에 줄이 두 개 있는 은행을 떠올려 보자</h2>
+    <div class="split wide-left">
+      <div class="stack">
+        <p class="prose">창구가 하나뿐인 은행이다. 직원이 한 명이라 두 손님을 동시에
+        받을 수 없다. 손님 하나를 붙잡고 있는 동안 나머지는 전부 기다린다. 그런데 줄이
+        둘이다. 직원은 손님 한 명을 끝낼 때마다 고개를 들어 <b>우대 줄을 먼저</b> 본다.
+        우대 줄에 사람이 남아 있으면 그 줄이 완전히 빌 때까지 우대 줄만 처리하고, 그
+        뒤에야 일반 줄에서 다음 손님을 부른다.</p>
+        <p class="prose">왜 우대 줄은 한 명이 아니라 전부를 비울까. 우대 줄에 선 사람은
+        새 손님이 아니라 방금 끝낸 일의 뒷정리다. 서류 하나를 여러 사람이 나눠 들고 온
+        셈이어서, 중간에 일반 손님을 끼우면 서류가 반만 정리된 상태로 창구가 넘어간다.
+        그래서 규칙이 "뒷정리는 하나도 남기지 않는다"가 된다.</p>
+        <div class="caveat"><b>이 비유가 깨지는 지점</b>
+        은행 직원은 지치고 손님은 순서를 양보할 수도 있지만, 큐는 둘 다 못 한다. 더
+        중요한 건 이 비유가 <mark>감추는 위험</mark>이다. 은행의 우대 줄은 언젠가 끝나지만,
+        마이크로태스크는 처리되는 도중에 새 마이크로태스크를 만들 수 있다. 그러면 우대
+        줄이 영원히 줄지 않아 일반 줄은 한 명도 못 불린다. 화면이 굳는 실제 원인 중
+        하나가 이것이다.</div>
+      </div>
+      <table class="map">
+        <thead><tr><th>은행</th><th>자바스크립트</th></tr></thead>
+        <tbody>
+          <tr><td>창구 직원 한 명</td><td>단일 스레드</td></tr>
+          <tr><td>일반 줄</td><td>매크로태스크 큐</td></tr>
+          <tr><td>우대 줄</td><td>마이크로태스크 큐</td></tr>
+          <tr><td>손님 한 명을 끝낸 직후</td><td>태스크 하나가 끝난 직후</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="precise" data-goal="g1">
+    <h2 class="headline">태스크 하나가 끝나면 마이크로태스크 큐를 <span class="hl">전부</span> 비운다</h2>
+    <ol class="steps">
+      <li><b>콜 스택이 빈다</b>
+        <span class="prose why">지금 돌던 함수들이 전부 반환돼야 이벤트 루프가 다음
+        판단을 할 수 있다. 함수 하나가 끝나지 않으면 큐에 무엇이 쌓여 있든 아무 일도
+        일어나지 않는다. 큐를 보는 눈은 스택이 빈 순간에만 열린다.</span></li>
+      <li><b>마이크로태스크 큐를 전부 비운다</b>
+        <span class="prose why">하나만 꺼내고 나가면 프로미스 체인의 중간 상태가 다음
+        태스크나 화면에 관찰된다. 전부 비우기로 정해 두면 태스크 하나와 그 뒤처리가
+        통째로 한 덩어리가 된다. 비우는 도중에 새로 생긴 마이크로태스크도 이번 차례에
+        같이 처리된다 — 끝없이 만들면 여기서 못 빠져나온다.</span></li>
+      <li><b>필요하면 렌더링한다</b>
+        <span class="prose why">브라우저는 화면 주사율에 맞춰 필요할 때만 이 단계를
+        돈다. 매 태스크마다 그리지는 않는다. 중요한 건 이 단계가 태스크 <em>사이</em>에만
+        있다는 점이다. 그래서 태스크가 길면 그 안에서 바꾼 DOM은 아무리 급해도 화면에
+        나오지 못한다.</span></li>
+      <li><b>매크로태스크 하나를 꺼낸다</b>
+        <span class="prose why">타이머 콜백, 클릭 이벤트, 네트워크 응답 처리가 여기서
+        하나씩 들어온다. 한 바퀴에 하나만 꺼내는 이유는 그래야 2번과 3번이 매 태스크
+        뒤에 보장되기 때문이다. 여러 개를 몰아 처리하면 그사이 화면은 멈춘 채로
+        있다.</span></li>
+    </ol>
+  </section>
+
+  <section class="slide" data-kind="precise" data-goal="g1">
+    <h2 class="headline">한 바퀴를 그림으로 따라가면 비대칭이 눈에 보인다</h2>
+    <div class="split wide-right">
+      <div class="stack">
+        <p class="prose">한 바퀴에 일반 줄에서 꺼내는 것은 언제나 하나뿐인데,
+        마이크로태스크 쪽은 큐가 빌 때까지 되돌아오는 고리로 그려져 있다. 이 비대칭이
+        목표 1의 전부다. 두 큐를 "빠른 줄, 느린 줄"로 외우면 틀리고, "하나씩 꺼내는
+        줄과 몰아서 비우는 줄"로 외우면 맞는다.</p>
+        <p class="prose">렌더링 칸이 고리 밖에 있는 것도 눈으로 확인해 두자.
+        마이크로태스크를 비우는 동안에는 화면을 그릴 기회가 오지 않는다는 뜻이다. 이
+        한 칸의 위치가 목표 2에서 화면 멈춤의 원인이 된다.</p>
+      </div>
+      <figure class="figure">
+        <svg viewBox="0 0 300 178" role="img" aria-label="태스크 하나를 꺼내 실행하고, 마이크로태스크 큐를 빌 때까지 반복해 비운 다음, 필요하면 렌더링하고 다시 처음으로 돌아오는 한 바퀴">
+          <defs><marker id="v-loop" viewBox="0 0 10 10" refX="9" refY="5"
+                  markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0 0 L10 5 L0 10 z" fill="currentColor"/></marker></defs>
+          <g fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5">
+            <rect x="44" y="12" width="164" height="30" rx="5"/>
+            <rect x="44" y="72" width="164" height="30" rx="5"/>
+          </g>
+          <rect x="44" y="132" width="164" height="30" rx="5" fill="none"
+                stroke="currentColor" stroke-width="1.5" opacity=".5"/>
+          <g font-size="10" fill="var(--accent)" text-anchor="middle">
+            <text x="126" y="31">태스크 하나 실행</text>
+            <text x="126" y="91">마이크로태스크 전부</text>
+          </g>
+          <text x="126" y="151" font-size="10" fill="currentColor" opacity=".7"
+                text-anchor="middle">필요하면 렌더링</text>
+          <g stroke="currentColor" stroke-width="1.5" marker-end="url(#v-loop)" opacity=".6">
+            <path d="M126 42 V68"/><path d="M126 102 V128"/>
+          </g>
+          <path d="M212 80 H236 V94 H214" fill="none" stroke="var(--accent)"
+                stroke-width="1.5" marker-end="url(#v-loop)"/>
+          <text x="252" y="72" font-size="9" fill="var(--accent)" text-anchor="middle">빌 때까지</text>
+          <path d="M40 147 H16 V27 H40" fill="none" stroke="currentColor"
+                stroke-width="1.5" opacity=".5" marker-end="url(#v-loop)"/>
+        </svg>
+      </figure>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="example" data-goal="g1">
+    <h2 class="headline">이 여덟 줄의 출력 순서가 규칙을 그대로 보여준다</h2>
+    <div class="split">
+      <div class="stack">
+        <pre><code>console.log('1');
+setTimeout(() =&gt; {
+  console.log('2');
+}, 0);
+Promise.resolve().then(() =&gt; {
+  console.log('3');
+});
+console.log('4');</code></pre>
+        <p class="prose">1과 4가 먼저 찍히는 건 이 둘이 동기 코드라서다. 스크립트 전체가
+        하나의 태스크이고, 그 태스크가 끝나기 전에는 큐를 보는 눈이 열리지 않는다.
+        <code>setTimeout</code>과 <code>then</code>은 "지금 실행해라"가 아니라 "나중에
+        실행할 것을 등록해라"이므로, 등록만 하고 곧바로 다음 줄로 넘어간다.</p>
+      </div>
+      <div class="stack">
+        <pre><code>1
+4
+3
+2</code></pre>
+        <p class="prose">스크립트 태스크가 끝나자 마이크로태스크 차례가 열려 3이 나오고,
+        2는 그다음 태스크다. 여기서 오해 하나를 지우자. <code>setTimeout</code>의 0은
+        "즉시"가 아니라 "기다리지 말고 매크로태스크 큐에 넣어라"는 뜻이다. 큐에 들어간
+        뒤에는 앞의 순서를 지켜야 하고, 그 앞에는 늘 마이크로태스크 비우기가 있다.
+        지연을 0으로 줘도 3보다 앞설 수 없는 이유가 이것이다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="pitfall" data-goal="g1">
+    <h2 class="headline">0을 <span class="hl">즉시</span>로 읽으면 여기서 두 번 틀린다</h2>
+    <div class="misconception">
+      <div>
+        <p class="myth prose"><code>setTimeout(fn, 0)</code>은 이 줄 바로 다음에 실행된다.</p>
+        <p class="fact prose">이번 태스크가 끝나고, 마이크로태스크가 다 비워지고, 필요하면
+        렌더링까지 지난 뒤에 실행된다. 게다가 0이라고 써도 실제 지연은 0이 아니고,
+        <code>setTimeout</code>이 다섯 단계 넘게 겹쳐 호출되면 최소 4ms로 늘어난다. 0은
+        시간이 아니라 순서에 대한 지시다.</p>
+      </div>
+      <div>
+        <p class="myth prose">마이크로태스크는 매크로태스크보다 항상 먼저다.</p>
+        <p class="fact prose">정확히는 "방금 끝난 태스크 직후에 먼저"다. 이미 큐에 있던
+        타이머 콜백이 실행된 뒤 그 안에서 만들어진 프로미스는, 아직 대기 중인 다른 타이머
+        콜백보다 먼저 처리된다. 순서를 정하는 것은 큐의 종류가 아니라 체크포인트가 언제
+        열리는가다.</p>
+      </div>
+      <div>
+        <p class="myth prose">프로미스로 감싸면 무거운 일이 뒤에서 따로 돌아간다.</p>
+        <p class="fact prose">프로미스는 스레드를 만들지 않는다. <code>then</code> 안의
+        코드도 같은 스레드, 같은 콜 스택에서 돈다. 정말로 다른 스레드에 보내려면 워커가
+        필요하다. 이 오해가 곧바로 목표 2의 화면 멈춤으로 이어진다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="goal" data-goal="g2">
+    <p class="eyebrow">학습목표 2</p>
+    <h2 class="headline">화면이 멈추는 건 코드가 느려서가 아니라 큐를 안 놓아줘서다</h2>
+  </section>
+
+  <section class="slide" data-kind="intro" data-goal="g2">
+    <h2 class="headline">버튼을 눌렀는데 스피너가 돌지 않는 화면부터 보자</h2>
+    <div class="split wide-left">
+      <div class="stack">
+        <p class="prose">버튼을 누르면 목록을 다시 계산하는 화면이 있다. 계산이 오래
+        걸리니 스피너를 먼저 켜기로 하고, 클릭 처리 함수 첫 줄에
+        <code>spinner.hidden = false</code>를 넣었다. 계산이 끝나면 결과를 그리고 스피너를
+        끄는 줄도 같은 함수 안에 있다. 코드 순서로는 스피너가 먼저 켜지고 계산이 뒤에
+        온다. 그런데 실제로는 누른 뒤 화면이 3초쯤 그대로 굳어 있고, 그 시간이 지나면
+        완성된 목록이 곧바로 나타난다. 스피너는 잠깐 반짝하고 사라지는 것조차 아니다 —
+        켜진 스피너가 화면에 보이는 순간이 아예 없다.</p>
+        <p class="prose">여기서 흔한 진단이 "계산이 느려서 화면이 못 따라간다"다. 그런데
+        계산을 두 배 빠르게 만들어도 증상은 그대로다. 굳는 시간만 절반이 되고 스피너는
+        여전히 안 보인다. 원인이 속도가 아니라는 신호다. <code>hidden</code>을 바꾸는 것은
+        DOM 속성을 고치는 일일 뿐이고, 그게 화면에 나타나려면 브라우저가 렌더링 단계를
+        한 번 돌아야 한다. 그 단계는 지금 이 함수가 끝나야 열린다.</p>
+      </div>
+      <ul class="pain">
+        <li>버튼을 누르면 스피너를 켜는 코드를 먼저 넣었다.</li>
+        <li>바로 뒤에서 20만 건을 훑어 점수를 다시 계산한다.</li>
+        <li>스피너가 켜진 화면은 단 한 프레임도 나타나지 않는다.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="precise" data-goal="g2">
+    <h2 class="headline">렌더링은 태스크 안이 아니라 태스크 사이에 끼어든다</h2>
+    <div class="split wide-left">
+      <div class="stack">
+        <p class="prose">브라우저의 한 바퀴에는 화면을 갱신하는 칸이 있다. 스타일을 다시
+        계산하고, 배치를 잡고, 픽셀을 그리는 일이 거기서 일어난다. 그 칸은 태스크와
+        태스크 사이에만 있고, 자바스크립트 태스크가 도는 동안에는 절대 끼어들지 못한다.
+        두 일을 같은 스레드가 하기 때문이다 — 스레드 하나가 계산을 붙잡고 있으면 그
+        스레드로 그림을 그릴 수 없다.</p>
+        <p class="prose">그래서 "화면이 멈춘다"의 정확한 뜻은 "그릴 기회가 오지 않는다"다.
+        60Hz 화면은 약 16ms마다 한 프레임을 기대한다. 태스크 하나가 300ms를 쓰면 그
+        구간의 프레임 열여덟 장이 그대로 사라진다. 같은 이유로 그 구간의 클릭과 입력도
+        처리되지 않는다 — 그것들도 태스크로 큐에 쌓여 차례를 기다린다.</p>
+      </div>
+      <figure class="figure">
+        <svg viewBox="0 0 300 160" role="img" aria-label="한 태스크가 길게 이어지면 그 구간에 프레임이 하나도 그려지지 않고, 같은 일을 여러 태스크로 쪼개면 태스크 사이마다 프레임이 그려진다는 대조">
+          <text x="6" y="16" font-size="10" fill="var(--warn)">한 태스크로 다 할 때</text>
+          <rect x="6" y="26" width="252" height="24" rx="4" fill="var(--warn-soft)"
+                stroke="var(--warn)" stroke-width="1.5"/>
+          <text x="132" y="42" font-size="9" fill="var(--warn)" text-anchor="middle">계산 300ms</text>
+          <text x="132" y="66" font-size="9" fill="var(--warn)" text-anchor="middle">이 구간에 프레임 0장</text>
+          <text x="6" y="100" font-size="10" fill="var(--accent)">쪼개서 넘길 때</text>
+          <g fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5">
+            <rect x="6" y="110" width="52" height="24" rx="4"/>
+            <rect x="72" y="110" width="52" height="24" rx="4"/>
+            <rect x="138" y="110" width="52" height="24" rx="4"/>
+            <rect x="204" y="110" width="52" height="24" rx="4"/>
+          </g>
+          <g font-size="9" fill="var(--accent)" text-anchor="middle">
+            <text x="32" y="126">5천 건</text><text x="98" y="126">5천 건</text>
+            <text x="164" y="126">5천 건</text><text x="230" y="126">5천 건</text>
+          </g>
+          <g stroke="var(--accent)" stroke-width="1.5">
+            <path d="M65 106 V138"/><path d="M131 106 V138"/><path d="M197 106 V138"/>
+          </g>
+          <text x="131" y="152" font-size="9" fill="var(--accent)"
+                text-anchor="middle">틈마다 프레임 한 장</text>
+        </svg>
+      </figure>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="example" data-goal="g2">
+    <h2 class="headline">같은 계산을 조각내면 그 틈으로 화면이 살아난다</h2>
+    <div class="split">
+      <div class="stack">
+        <pre><code>btn.onclick = () =&gt; {
+  spinner.hidden = false;
+  const out = heavyScan(rows);
+  paint(out);
+  spinner.hidden = true;
+};</code></pre>
+        <p class="prose">이 함수가 반환될 때까지가 한 태스크다. 안에서
+        <code>hidden</code>을 두 번 바꿨지만 브라우저가 보는 것은 마지막 상태뿐이다.
+        태스크가 끝난 뒤 처음 그릴 때 스피너는 이미 꺼져 있다.</p>
+      </div>
+      <div class="stack">
+        <pre><code>function step(i) {
+  const end = Math.min(i + 5000, n);
+  while (i &lt; end) scan(rows[i++]);
+  if (i &lt; n) setTimeout(step, 0, i);
+  else finish();
+}
+btn.onclick = () =&gt; {
+  spinner.hidden = false;
+  step(0);
+};</code></pre>
+        <p class="prose">5000건만 처리한 <code>step</code>은 곧 반환되므로 태스크가 실제로
+        끝나고, 그 틈에 렌더링과 클릭 처리가 들어온다. 스피너가 돌고 취소 버튼도 눌린다.
+        스피너를 끄는 일은 마지막 조각의 <code>finish</code>가 맡는다. 대가는 있다 —
+        조각마다 최소 지연이 붙어 전체 시간은 조금 길어진다. 조각을 너무 작게 잡으면 그
+        손해가 커진다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="pitfall" data-goal="g2">
+    <h2 class="headline">쪼개기를 잘못 쪼개면 화면은 그대로 굳어 있다</h2>
+    <div class="misconception">
+      <div>
+        <p class="myth prose"><code>await</code>로 한 번 양보하면 화면이 갱신된다.</p>
+        <p class="fact prose"><code>await Promise.resolve()</code>는 마이크로태스크로
+        이어지므로 태스크가 끝나지 않는다. 큐를 비우는 동안에는 렌더링 칸이 오지 않는다.
+        태스크를 정말로 끊으려면 지금 함수를 반환해서 이벤트 루프로 돌아가야 한다.
+        <code>setTimeout</code>, <code>scheduler.yield()</code>, 다음 프레임에 이어 하는
+        <code>requestAnimationFrame</code>이 그 역할을 한다.</p>
+      </div>
+      <div>
+        <p class="myth prose">메인 스레드가 막히면 애니메이션도 전부 멈춘다.</p>
+        <p class="fact prose"><code>transform</code>과 <code>opacity</code>만 바꾸는
+        애니메이션은 합성 단계에서 처리돼 메인 스레드가 막혀도 계속 움직일 수 있다. 그래서
+        "이미 돌던 스피너는 도는데 새로 켠 스피너는 안 나타난다"는 상황이 생긴다. 막히는
+        것은 메인 스레드가 해야 하는 일 — 스타일 재계산, 배치, 그리고 입력 처리다.</p>
+      </div>
+      <div>
+        <p class="myth prose">무거운 계산은 쪼개면 해결된다.</p>
+        <p class="fact prose">쪼개기는 화면이 반응하게 만드는 기술이고, 계산을 빠르게
+        만드는 기술이 아니다. 전체 시간은 오히려 늘어난다. 계산 자체를 줄이는 게 목표라면
+        워커로 다른 스레드에 보내는 것이 맞다. 워커는 DOM을 만질 수 없으니 결과만 받아
+        메인 스레드에서 그린다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="closing">
+    <h2 class="headline">답을 펴 보기 전에 스스로 말로 해 보자</h2>
+    <div class="split">
+      <div class="stack">
+        <pre><code>setTimeout(() =&gt; {
+  console.log('A');
+  Promise.resolve().then(() =&gt; {
+    console.log('B');
+  });
+}, 0);
+setTimeout(() =&gt; console.log('C'), 0);
+Promise.resolve().then(() =&gt; {
+  console.log('D');
+});
+console.log('E');</code></pre>
+        <p class="prose">타이머 두 개와 프로미스 두 개가 섞여 있다. 종이에 먼저 적어 보고
+        답을 펴자.</p>
+      </div>
+      <div class="stack">
+        <details class="quiz" data-goal="g1">
+          <summary>왼쪽 코드는 어떤 순서로 찍힐까? B와 C 중 무엇이 먼저인가?</summary>
+          <p class="prose">E, D, A, B, C 순이다. E는 동기 코드다. 스크립트 태스크가
+          끝나면 체크포인트가 열려 D가 나온다. 다음 태스크가 첫 타이머라서 A가 찍히고,
+          그 안에서 B가 마이크로태스크로 등록된다. 여기가 핵심이다 — 태스크가 끝날 때마다
+          체크포인트가 열리므로, B는 이미 큐에서 기다리던 C보다 먼저 처리된다.
+          C가 마지막이다. "프로미스가 항상 타이머보다 먼저"로 외웠다면 B를 맨 끝에
+          놓게 된다.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="closing">
+    <h2 class="headline">이 세 줄이 남으면 이 장은 값을 한 것이다</h2>
+    <div class="split wide-right">
+      <ol class="takeaways">
+        <li>순서는 큐의 종류가 아니라 체크포인트가 언제 열리는가로 정해진다.</li>
+        <li>태스크가 끝나야 화면을 그린다. 화면을 살리려면 큐를 놓아줘야 한다.</li>
+        <li>마이크로태스크로 넘기는 것은 양보가 아니다. 새 태스크를 만들어야 양보다.</li>
+      </ol>
+      <div class="stack">
+        <details class="quiz" data-goal="g2">
+          <summary>조각 사이를 <code>queueMicrotask(step)</code>으로 이은 A와, 조각마다
+          <code>await fetch(nextUrl)</code>로 다음 5천 건을 서버에서 받아 처리하는 B가 있다.
+          스피너가 도는 쪽은 어디이고, 왜 그런가?</summary>
+          <p class="prose">B만 돈다. 갈림길은 <code>await</code>를 썼는지도, 조각을 몇 개로
+          나눴는지도 아니다. <em>기다리는 프로미스가 지금 이 태스크 안에서 결정되는가</em>다.</p>
+          <p class="prose">A는 안 돈다. <code>queueMicrotask</code>는 남은 일을 지금 비우고
+          있는 마이크로태스크 큐 끝에 붙인다. 큐를 비우는 도중에 들어온 마이크로태스크까지
+          같은 체크포인트에서 처리되므로 태스크가 끝나지 않는다. 조각을 아무리 잘게 나눠도
+          렌더링 칸은 오지 않는다.</p>
+          <p class="prose">B는 돈다. <code>fetch</code>의 프로미스는 응답이 도착해야
+          결정되고, 그 시점은 지금 태스크 안이 아니다. 그래서 <code>await</code>가 함수를
+          여기서 멈추고 이벤트 루프로 돌려보내며, 지금 태스크가 실제로 끝난다. 그 틈에
+          렌더링 칸이 열려 스피너가 나타나 돌고, 응답이 도착하면 그때의 새 태스크에 이어
+          붙어 나머지가 실행된다.</p>
+          <p class="prose">그러니 <code>await</code>는 양보이기도 하고 아니기도 하다. 이미
+          결정된 값을 기다리면 양보가 아니고, 나중에 결정될 값을 기다리면 양보다.</p>
+        </details>
+        <p class="prose">다음 장에서는 <code>async/await</code>가 이 체크포인트 위에서
+        어떤 순서로 풀리는지 본다.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="resume" hidden>
+  <span id="resume-text"></span>
+  <button type="button" id="resume-go">이어 보기</button>
+  <button type="button" id="resume-restart">처음부터</button>
+</div>
+
+<div class="hud">
+  <span class="count"><b id="cur">1</b> / <span id="total">1</span></span>
+  <span class="bar"><i id="fill"></i></span>
+  <span class="goalnow" id="goalnow"></span>
+  <span class="hint">? 도움말</span>
+</div>
+
+<div id="help"><div>
+  <div><kbd>← →</kbd>이동 · <kbd>Space</kbd>다음</div>
+  <div><kbd>Home End</kbd>처음/끝</div>
+  <div><kbd>o</kbd>전체 보기</div>
+  <div><kbd>t</kbd>테마 · <kbd>f</kbd>전체화면</div>
+  <div><kbd>Esc</kbd>이어 보기 알림 닫기</div>
+  <div><kbd>Esc</kbd>닫기 · <kbd>Cmd/Ctrl+P</kbd>PDF로 저장</div>
+</div></div>
+
+<script>
+(() => {
+  const slides = [...document.querySelectorAll('.slide')];
+  const stage = document.getElementById('stage');
+  const cur = document.getElementById('cur'), fill = document.getElementById('fill');
+  const goalnow = document.getElementById('goalnow');
+  const RESUME_KEY = 'learning-deck-builder:' + location.pathname;
+  document.getElementById('total').textContent = slides.length;
+  let i = 0;
+
+  const clamp = n => Math.max(0, Math.min(slides.length - 1, n));
+
+  function render() {
+    slides.forEach((s, n) => {
+      s.hidden = n !== i;
+      s.classList.toggle('is-active', n === i);
+    });
+    cur.textContent = i + 1;
+    fill.style.width = ((i + 1) / slides.length * 100) + '%';
+
+    const s = slides[i], g = s.dataset.goal;
+    const KIND_LABEL = {
+      cover: '', opening: '이번 챕터 목표', goal: '목표 시작',
+      intro: '쉬운 설명', precise: '엄밀한 설명', example: '실제 예시',
+      pitfall: '함정과 오해', closing: '이해 확인',
+    };
+    const label = KIND_LABEL[s.dataset.kind] ?? '';
+    if (g) {
+      const all = declaredGoals();
+      const at = all.indexOf(g);
+      goalnow.textContent = at < 0 ? label : `목표 ${at + 1}/${all.length}${label ? ' · ' + label : ''}`;
+    } else {
+      goalnow.textContent = label;
+    }
+  }
+
+  function go(n, push = true) {
+    i = clamp(n);
+    render();
+    if (push) history.replaceState(null, '', '#' + (i + 1));
+    try { localStorage.setItem(RESUME_KEY, String(i + 1)); } catch { /* 시크릿 모드 */ }
+  }
+
+  const overview = on => {
+    document.body.classList.toggle('overview', on);
+    if (!on) render();
+    else slides.forEach(s => { s.hidden = true; });  // CSS가 다시 보이게 함
+  };
+
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (k === 'Escape') {
+      document.body.classList.remove('help-on');
+      const rb = document.getElementById('resume');
+      if (rb) rb.hidden = true;
+      if (document.body.classList.contains('overview')) overview(false);
+      return;
+    }
+    if (k === '?' || k === '/') { document.body.classList.toggle('help-on'); return; }
+    if (k === 'o' || k === 'O') { overview(!document.body.classList.contains('overview')); return; }
+    if (k === 't' || k === 'T') {
+      const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+      const now = document.documentElement.dataset.theme || (dark ? 'dark' : 'light');
+      document.documentElement.dataset.theme = now === 'dark' ? 'light' : 'dark';
+      return;
+    }
+    if (k === 'f' || k === 'F') {
+      document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+      return;
+    }
+    if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(k)) { e.preventDefault(); go(i + 1); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(k)) { e.preventDefault(); go(i - 1); }
+    else if (k === 'Home') go(0);
+    else if (k === 'End') go(slides.length - 1);
+  });
+
+  stage.addEventListener('click', e => {
+    if (e.target.closest('a, button, input, pre')) return;
+    if (document.body.classList.contains('overview')) {
+      const s = e.target.closest('.slide');
+      if (s) { overview(false); go(slides.indexOf(s)); }
+      return;
+    }
+    go(i + 1);
+  });
+
+  let x0 = null;
+  stage.addEventListener('touchstart', e => { x0 = e.changedTouches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 45) go(i + (dx < 0 ? 1 : -1));
+    x0 = null;
+  }, { passive: true });
+
+  addEventListener('hashchange', () => go((parseInt(location.hash.slice(1), 10) || 1) - 1, false));
+
+  const hashAt = parseInt(location.hash.slice(1), 10);
+
+  // go()는 호출되는 순간 현재 장을 RESUME_KEY에 덮어쓴다. 그래서 이어 보기를 위한
+  // "지난번" 값은 go()를 부르기 전에 먼저 읽어 둬야 한다 — 순서를 바꾸면 첫 go() 호출이
+  // 방금 읽으려던 값을 스스로 지워버린다.
+  let saved = 0;
+  try { saved = parseInt(localStorage.getItem(RESUME_KEY) || '0', 10); } catch { /* 무시 */ }
+
+  go((hashAt || 1) - 1, false);
+
+  // 주소에 장 번호가 있으면 그게 이긴다. 없을 때만 이어 보기를 제안한다.
+  if (!hashAt) {
+    if (saved > 1 && saved <= slides.length) {
+      const box = document.getElementById('resume');
+      document.getElementById('resume-text').textContent = `지난번 ${saved}번 장까지 봤다`;
+      box.hidden = false;
+      document.getElementById('resume-go').onclick = () => { go(saved - 1); box.hidden = true; };
+      document.getElementById('resume-restart').onclick = () => { go(0); box.hidden = true; };
+    }
+  }
+
+  /* ── 자기검사 ────────────────────────────────────────────
+     학습 연결을 본다 — 목표 ↔ 설명 장 ↔ 퀴즈가 이어져 있는가.
+     산문 하한은 목표 단위 하나이고, 챕터 열기 장만 따로 받는다. */
+  const TOPIC_TITLE = /(개요|소개|이란|이란\?|란\?|의 구조|의 특징|의 종류|의 장점|정리하면)\s*$/;
+  const KNOWN_KINDS = ['cover', 'opening', 'goal', 'intro', 'precise', 'example', 'pitfall', 'closing'];
+  const GOAL_KINDS  = ['goal', 'intro', 'precise', 'example', 'pitfall'];
+  const BODY_KINDS  = ['intro', 'precise', 'example', 'pitfall'];   // 목표를 실제로 설명하는 장
+  const BEATS       = ['intro', 'precise', 'example'];              // 이 순서를 지켜야 한다
+  const NO_GOAL_KINDS = ['cover', 'opening', 'closing'];
+
+  // 하한 집계는 .prose 만 센다. <details> 내부는 펼쳐져 있어도 세지 않는다.
+  const proseLen = (root) => [...root.querySelectorAll('.prose')]
+    .filter(e => !e.closest('details'))
+    .map(e => e.textContent.replace(/\s+/g, ' ').trim())
+    .join(' ').length;
+
+  // 챕터 열기 장의 .outcomes 가 목표 선언이다. 나머지 검사가 이 목록을 기준으로 집계한다.
+  // function 선언으로 호이스팅해 둔다 — render()가 파일 맨 끝의 첫 go() 호출(이 정의보다
+  // 앞줄)에서 이미 declaredGoals()를 부르므로, const 화살표 함수면 TDZ로 깨진다.
+  function outcomeItems() { return [...document.querySelectorAll('.slide[data-kind="opening"] .outcomes li')]; }
+  function declaredGoals() { return outcomeItems().map(li => li.dataset.goal).filter(Boolean); }
+
+  function check() {
+    const cw = document.body.className, hash = location.hash;
+    const issues = [];
+    try {
+      document.body.className = '';
+
+      slides.forEach((s, n) => {
+        slides.forEach((x, m) => { x.hidden = m !== n; });
+        const kind = s.dataset.kind || '?';
+        const at = `${n + 1}번(${kind})`;
+        const add = (m) => issues.push(`${at}: ${m}`);
+        if (!KNOWN_KINDS.includes(kind))
+          add(`data-kind="${kind}"는 모르는 값이다 — ${KNOWN_KINDS.join(' / ')} 중 하나여야 한다`);
+        if (GOAL_KINDS.includes(kind) && !s.dataset.goal)
+          add('설명 장인데 data-goal이 없다 — 어느 목표에 속하는지 알 수 없어 3박자·퀴즈 검사에서 통째로 빠진다');
+        if (NO_GOAL_KINDS.includes(kind) && s.dataset.goal)
+          add(`data-goal="${s.dataset.goal}"을 붙일 장이 아니다 — ${kind} 장은 목표에 속하지 않는다`);
+
+        if (s.scrollHeight - s.clientHeight > 2) add(`세로로 ${s.scrollHeight - s.clientHeight}px 넘침 — 레이아웃을 고쳐라. 글을 깎지 마라`);
+        if (s.scrollWidth - s.clientWidth > 2) add('가로로 넘침');
+        s.querySelectorAll('pre').forEach(p => {
+          if (p.scrollWidth - p.clientWidth > 2) add('코드에 가로 스크롤바 — 줄을 줄여라');
+        });
+
+        // 코드에는 해설이 딸려야 한다 (같은 부모 안 .prose — Spatial Contiguity)
+        s.querySelectorAll('pre').forEach(p => {
+          if (p.parentElement === s)
+            add('코드가 슬라이드 직속이다 — .stack 같은 컨테이너로 감싸라. 안 그러면 슬라이드 반대편 문단이 해설로 인정돼 이 검사가 무력해진다');
+          else if (!p.parentElement.querySelector('.prose'))
+            add('코드에 해설 문단이 없다 — 같은 부모 안에 .prose를 둬라');
+        });
+
+        const bullets = s.querySelectorAll('.pain li, .takeaways li').length;
+        if (bullets > 6) add(`불릿 ${bullets}개 (한계 6)`);
+
+        const emoji = (s.textContent.match(/\p{Extended_Pictographic}/gu) || []).length;
+        if (emoji > 2) add(`이모지 ${emoji}개 (한계 2) — 장식을 지워라`);
+
+        const head = s.querySelector('.headline, .lede');
+        if (!head) add('제목이 없다');
+        else if (TOPIC_TITLE.test(head.textContent.replace(/\s+/g, ' ').trim()))
+          add(`제목이 주제어다 — 완결된 문장으로 바꿔라 ("${head.textContent.trim().slice(0, 20)}…")`);
+
+        if (s.hasAttribute('data-analogy')) {
+          if (!s.querySelector('.map')) add('비유를 썼다고 표시했는데 매핑표(.map)가 없다 — Y의 어느 부분이 X의 무엇인지 밝혀라');
+          if (!s.querySelector('.caveat')) add('비유를 썼다고 표시했는데 "깨지는 지점"(.caveat)이 없다 — 독자가 비유를 사실로 믿는다');
+        }
+      });
+
+      // ── 챕터 열기 장 ─────────────────────────────────────
+      const openings = slides.filter(s => s.dataset.kind === 'opening');
+      if (!openings.length) issues.push('챕터 열기 장(data-kind="opening")이 없다 — 독자가 뭘 배우는지 모른다');
+
+      const items = outcomeItems();
+      const withGoal = items.filter(li => li.dataset.goal);
+      if (withGoal.length < 2)
+        issues.push(`학습목표 선언 ${withGoal.length}개 (하한 2) — 열기 장에 <ul class="outcomes"><li data-goal="g1">…</li> 를 둬라`);
+
+      items.forEach((li, n) => {
+        const text = li.textContent.replace(/\s+/g, ' ').trim();
+        if (!li.dataset.goal)
+          issues.push(`학습목표 ${n + 1}번에 data-goal이 없다 — 이 목표는 아무 장에도 연결되지 않는다`);
+        // 식별자는 짧은 이름 하나로 제한한다. 따옴표·공백이 섞이면 뒤 검사가 이 값으로
+        // 장을 찾을 수 없다.
+        else if (!/^[A-Za-z][\w-]*$/.test(li.dataset.goal))
+          issues.push(`학습목표 ${n + 1}번의 data-goal="${li.dataset.goal}"은 쓸 수 없는 이름이다 — 영문자로 시작하고 영문·숫자·_·-만 쓴 짧은 이름을 붙여라 (예: g1)`);
+        if (!/수 있다\s*\.?$/.test(text))
+          issues.push(`학습목표 ${n + 1}번이 "할 수 있게 되는 것"이 아니다 ("${text.slice(0, 24)}…") — "…할 수 있다"로 써라. 퀴즈로 확인할 수 없는 목표는 목표가 아니다`);
+      });
+
+      const seen = new Set();
+      declaredGoals().forEach(g => {
+        if (seen.has(g)) issues.push(`학습목표 "${g}"가 두 번 선언됐다`);
+        seen.add(g);
+      });
+
+      openings.forEach(s => {
+        const chars = proseLen(s);
+        if (chars < 400)
+          issues.push(`열기 장 산문 ${chars}자 (하한 400) — 왜 이걸 배우는지, 건너뛰면 뒤에서 무엇이 막히는지 문단으로 써라`);
+      });
+
+      // ── 목표 ↔ 장 연결 ───────────────────────────────────
+      const goals = declaredGoals();
+      const bodyOf = (g) => slides.filter(s => s.dataset.goal === g && BODY_KINDS.includes(s.dataset.kind));
+
+      slides.forEach((s, n) => {
+        const g = s.dataset.goal;
+        if (g && !goals.includes(g))
+          issues.push(`${n + 1}번(${s.dataset.kind}): data-goal="${g}"가 열기 장에 선언되지 않았다 — 미아 장이다`);
+      });
+
+      goals.forEach(g => {
+        if (!bodyOf(g).length)
+          issues.push(`학습목표 "${g}": 설명하는 장이 하나도 없다 — 선언만 하고 안 가르쳤다`);
+      });
+
+      // ── 3박자 순서: 쉬운 설명 → 엄밀한 설명 → 실제 예시 ──
+      const BEAT_LABEL = { intro: '쉬운 설명', precise: '엄밀한 설명', example: '실제 예시' };
+      goals.forEach(g => {
+        const firstAt = {};
+        slides.forEach((s, n) => {
+          if (s.dataset.goal !== g) return;
+          const k = s.dataset.kind;
+          if (BEATS.includes(k) && firstAt[k] === undefined) firstAt[k] = n;
+        });
+        const missing = BEATS.filter(k => firstAt[k] === undefined);
+        if (missing.length) {
+          issues.push(`학습목표 "${g}": ${missing.map(k => BEAT_LABEL[k]).join(', ')} 장이 없다 — 쉬운 설명 → 엄밀한 설명 → 실제 예시가 각각 최소 한 장 필요하다`);
+          return;
+        }
+        for (let a = 0; a < BEATS.length - 1; a++) {
+          const [x, y] = [BEATS[a], BEATS[a + 1]];
+          if (firstAt[x] > firstAt[y])
+            issues.push(`학습목표 "${g}": "${BEAT_LABEL[y]}" 장이 "${BEAT_LABEL[x]}" 장보다 먼저 나온다 (${firstAt[y] + 1}번 < ${firstAt[x] + 1}번) — 쉬운 설명부터 시작해라`);
+        }
+      });
+
+      // ── 목표별 퀴즈와 산문 총량 ──────────────────────────
+      goals.forEach(g => {
+        // 선택자에 값을 끼워 넣지 않는다 — 이름 규칙을 어긴 값이 와도 여기서 터지지 않게.
+        const quizzes = [...document.querySelectorAll('.quiz')].filter(q => q.dataset.goal === g).length;
+        if (!quizzes)
+          issues.push(`학습목표 "${g}": 확인 퀴즈가 없다 — <details class="quiz" data-goal="${g}"> 를 하나 이상 둬라. 목표를 세웠으면 확인해야 한다`);
+
+        const chars = slides
+          .filter(s => s.dataset.goal === g)
+          .reduce((n, s) => n + proseLen(s), 0);
+        if (chars < 1200)
+          issues.push(`학습목표 "${g}": 산문 ${chars}자 (하한 1200) — 말로 보충해야 이해되는 상태다. 장을 늘려도 되고 한 장을 길게 써도 된다`);
+      });
+
+      // ── 학습 시간 추정 (위반이 아니다. issues 에 넣지 않는다) ──
+      const proseAll = slides.reduce((n, s) => n + proseLen(s), 0);
+      const codeLines = [...document.querySelectorAll('.slide pre')]
+        .reduce((n, p) => n + p.textContent.trim().split('\n').length, 0);
+      const figures = document.querySelectorAll('.slide svg').length;
+      const quizzes = document.querySelectorAll('.quiz').length;
+      // 계수 근거: 산문 400자/분, 코드 6초/줄(0.1분), 그림 30초(0.5분), 퀴즈 60초(1분).
+      // 출처는 references/curriculum-design.md의 "분량 검산" 절이다.
+      const minutes = Math.round(proseAll / 400 + codeLines * 0.1 + figures * 0.5 + quizzes);
+      window.__deckStats = { minutes, prose: proseAll, codeLines, figures, quizzes };
+
+      return issues;
+    } finally {
+      // 검사가 중간에 터져도 페이지는 되살린다 — 한 장만 보이는 상태로 남으면 안 된다.
+      document.body.className = cw;
+      if (hash) location.hash = hash;
+      render();
+    }
+  }
+  window.__deckCheck = check;
+  const found = check();
+  const st = window.__deckStats;
+  console.info(`[learning-deck-builder] 슬라이드 ${slides.length}장 · 추정 학습 시간 약 ${st.minutes}분 (산문 ${st.prose}자, 코드 ${st.codeLines}줄, 그림 ${st.figures}개, 퀴즈 ${st.quizzes}개)`);
+  // 아래 두 안내는 위반이 아니다. 그래서 console.info 로 낮추고 "참고"를 붙였다.
+  // console.warn 은 위반에만 쓴다.
+  if (st.minutes < 50 || st.minutes > 140)
+    console.info(`[learning-deck-builder] 참고 — 추정 학습 시간 ${st.minutes}분. 목표는 60~120분이다. 위반은 아니지만 커리큘럼의 챕터 분할을 다시 봐라`);
+  const goalCount = declaredGoals().length;
+  if (goalCount < 4 || goalCount > 6)
+    console.info(`[learning-deck-builder] 참고 — 학습목표 ${goalCount}개. 챕터 하나는 4~6개다. 위반은 아니지만 커리큘럼의 챕터 분할을 다시 봐라`);
+  if (found.length) console.warn('[learning-deck-builder] 품질 게이트 위반 ' + found.length + '건:\n' + found.map(s => ' • ' + s).join('\n'));
+  else console.info('[learning-deck-builder] 품질 게이트 통과');
+})();
+</script>
+</body>
+</html>

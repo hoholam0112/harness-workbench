@@ -1,0 +1,4 @@
+.DS_Store
+skills/learning-deck-builder/tests/out/
+.playwright-mcp/
+.claude/worktrees/
