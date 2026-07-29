@@ -1,5 +1,9 @@
 # concept-slides 커리큘럼 기반 재작성 — 구현 계획
 
+> **이름이 바뀌었다.** 이 문서가 `concept-slides`라고 부르는 스킬은 작업이 끝난 뒤
+> `learning-deck-builder`로 이름을 바꿨다. 아래 본문은 작업 당시 기록이라 옛 이름을
+> 그대로 둔다 — 지금 파일은 `skills/learning-deck-builder/`에 있다.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** `concept-slides` 스킬을 커리큘럼 기반으로 바꿔, 호출마다 학습목표가 척추인 챕터 하나(1~2시간 분량)를 만들게 한다.

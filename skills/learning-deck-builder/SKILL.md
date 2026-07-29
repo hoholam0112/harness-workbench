@@ -1,5 +1,5 @@
 ---
-name: concept-slides
+name: learning-deck-builder
 description: Use when building self-study learning material — a course for learning a programming language, framework, tool, or AI topic on one's own, a learning curriculum, in-house onboarding course material, a study-group handout, or any "학습 자료 만들어줘", "커리큘럼 짜줘", "챕터별로 만들어줘", "개념 설명 자료" request. Plans the curriculum first — interviews, writes curriculum.md, then stops without producing any HTML — and on later invocations builds exactly ONE chapter as a single self-contained HTML file, 1–2 hours of reading, meant to be READ alone with no presenter. Not presentation slides: if the user wants a deck to talk over, that is a different artifact.
 ---
 

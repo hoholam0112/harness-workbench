@@ -1,5 +1,9 @@
 # concept-slides를 커리큘럼 기반 학습자료 스킬로 고치기 — 설계
 
+> **이름이 바뀌었다.** 이 문서가 `concept-slides`라고 부르는 스킬은 작업이 끝난 뒤
+> `learning-deck-builder`로 이름을 바꿨다. 아래 본문은 작업 당시 기록이라 옛 이름을
+> 그대로 둔다 — 지금 파일은 `skills/learning-deck-builder/`에 있다.
+
 작성일: 2026-07-29
 
 ## 왜 고치는가

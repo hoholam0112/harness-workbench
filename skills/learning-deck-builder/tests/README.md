@@ -6,7 +6,7 @@
 ## 돌리는 법
 
 ```bash
-cd skills/concept-slides
+cd skills/learning-deck-builder
 node tests/build.mjs broken
 ```
 
@@ -28,7 +28,7 @@ __deckCheck()
 아래는 다음 명령으로 실제로 받아 적은 출력이다. 손으로 짓지 않았다.
 
 ```bash
-cd skills/concept-slides
+cd skills/learning-deck-builder
 node tests/build.mjs broken
 python3 -m http.server 8791 &   # file:// 는 막혀 있어서 필요
 # 브라우저에서 http://localhost:8791/tests/out/broken.html 을 열고
@@ -70,9 +70,9 @@ window.__deckStats
 콘솔에는 다음 세 줄이 뜬다(실측, 요약 없이 그대로):
 
 ```
-[concept-slides] 슬라이드 10장 · 추정 학습 시간 약 1분 (산문 40자, 코드 1줄, 그림 0개, 퀴즈 1개)
-[concept-slides] 참고 — 추정 학습 시간 1분. 목표는 60~120분이다. 위반은 아니지만 커리큘럼의 챕터 분할을 다시 봐라
-[concept-slides] 참고 — 학습목표 1개. 챕터 하나는 4~6개다. 위반은 아니지만 커리큘럼의 챕터 분할을 다시 봐라
+[learning-deck-builder] 슬라이드 10장 · 추정 학습 시간 약 1분 (산문 40자, 코드 1줄, 그림 0개, 퀴즈 1개)
+[learning-deck-builder] 참고 — 추정 학습 시간 1분. 목표는 60~120분이다. 위반은 아니지만 커리큘럼의 챕터 분할을 다시 봐라
+[learning-deck-builder] 참고 — 학습목표 1개. 챕터 하나는 4~6개다. 위반은 아니지만 커리큘럼의 챕터 분할을 다시 봐라
 ```
 
 세 줄 다 `console.info`다. `console.warn`은 위반 목록에만 쓴다 — 콘솔만 보고 안내와
