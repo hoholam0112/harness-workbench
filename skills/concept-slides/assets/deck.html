@@ -694,6 +694,27 @@ web   <span class="k">2/2</span>    Running</code></pre>
         issues.push(`학습목표 "${g}": 설명하는 장이 하나도 없다 — 선언만 하고 안 가르쳤다`);
     });
 
+    // ── 3박자 순서: 쉬운 설명 → 엄밀한 설명 → 실제 예시 ──
+    const BEAT_LABEL = { intro: '쉬운 설명', precise: '엄밀한 설명', example: '실제 예시' };
+    goals.forEach(g => {
+      const firstAt = {};
+      slides.forEach((s, n) => {
+        if (s.dataset.goal !== g) return;
+        const k = s.dataset.kind;
+        if (BEATS.includes(k) && firstAt[k] === undefined) firstAt[k] = n;
+      });
+      const missing = BEATS.filter(k => firstAt[k] === undefined);
+      if (missing.length) {
+        issues.push(`학습목표 "${g}": ${missing.map(k => BEAT_LABEL[k]).join(', ')} 장이 없다 — 쉬운 설명 → 엄밀한 설명 → 실제 예시가 각각 최소 한 장 필요하다`);
+        return;
+      }
+      for (let a = 0; a < BEATS.length - 1; a++) {
+        const [x, y] = [BEATS[a], BEATS[a + 1]];
+        if (firstAt[x] > firstAt[y])
+          issues.push(`학습목표 "${g}": "${BEAT_LABEL[y]}" 장이 "${BEAT_LABEL[x]}" 장보다 먼저 나온다 (${firstAt[y] + 1}번 < ${firstAt[x] + 1}번) — 쉬운 설명부터 시작해라`);
+      }
+    });
+
     document.body.className = cw;
     if (hash) location.hash = hash;
     render();
