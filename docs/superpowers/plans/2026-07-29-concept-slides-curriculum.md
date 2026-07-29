@@ -361,10 +361,16 @@ git commit -m "feat(concept-slides): reject unknown data-kind values"
 
 `proseLen` 정의 아래에 넣는다. `check()` 밖이다 — Task 9의 HUD가 같은 목록을 쓴다.
 
+**화살표 함수가 아니라 `function` 선언이어야 한다.** 이 두 함수는 파일에서 자기
+정의보다 **위쪽**에서 불린다 — Task 9가 `render()` 안에서 `declaredGoals()`를
+부르고, `render()`는 파일 중간의 첫 `go()` 호출로 즉시 실행된다. `const` 화살표
+함수로 두면 그 시점에 아직 초기화되지 않아 `ReferenceError`가 나고 스크립트 전체가
+죽는다. `function` 선언은 호이스팅되므로 안전하다.
+
 ```js
   // 챕터 열기 장의 .outcomes 가 목표 선언이다. 나머지 검사가 이 목록을 기준으로 집계한다.
-  const outcomeItems = () => [...document.querySelectorAll('.slide[data-kind="opening"] .outcomes li')];
-  const declaredGoals = () => outcomeItems().map(li => li.dataset.goal).filter(Boolean);
+  function outcomeItems() { return [...document.querySelectorAll('.slide[data-kind="opening"] .outcomes li')]; }
+  function declaredGoals() { return outcomeItems().map(li => li.dataset.goal).filter(Boolean); }
 ```
 
 - [ ] **Step 2: 선언 게이트를 넣는다**
@@ -774,12 +780,17 @@ git commit -m "feat(concept-slides): gate analogy integrity only when declared, 
 
 ```js
   const hashAt = parseInt(location.hash.slice(1), 10);
+
+  // go()는 호출되는 순간 현재 장을 RESUME_KEY에 덮어쓴다. 그래서 저장된 값은
+  // go() 를 부르기 전에 읽어야 한다 — 뒤에서 읽으면 방금 쓴 값을 되읽어
+  // saved 가 늘 1이 되고 배너가 영영 안 뜬다.
+  let saved = 0;
+  try { saved = parseInt(localStorage.getItem(RESUME_KEY) || '0', 10); } catch { /* 무시 */ }
+
   go((hashAt || 1) - 1, false);
 
   // 주소에 장 번호가 있으면 그게 이긴다. 없을 때만 이어 보기를 제안한다.
   if (!hashAt) {
-    let saved = 0;
-    try { saved = parseInt(localStorage.getItem(RESUME_KEY) || '0', 10); } catch { /* 무시 */ }
     if (saved > 1 && saved <= slides.length) {
       const box = document.getElementById('resume');
       document.getElementById('resume-text').textContent = `지난번 ${saved}번 장까지 봤다`;
