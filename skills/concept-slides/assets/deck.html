@@ -1014,7 +1014,7 @@ console.log('E');</code></pre>
       const figures = document.querySelectorAll('.slide svg').length;
       const quizzes = document.querySelectorAll('.quiz').length;
       // 계수 근거: 산문 400자/분, 코드 6초/줄(0.1분), 그림 30초(0.5분), 퀴즈 60초(1분).
-      // 출처는 references/curriculum-design.md의 분량 추정 절이다.
+      // 출처는 references/curriculum-design.md의 "분량 검산" 절이다.
       const minutes = Math.round(proseAll / 400 + codeLines * 0.1 + figures * 0.5 + quizzes);
       window.__deckStats = { minutes, prose: proseAll, codeLines, figures, quizzes };
 
@@ -1030,8 +1030,8 @@ console.log('E');</code></pre>
   const found = check();
   const st = window.__deckStats;
   console.info(`[concept-slides] 슬라이드 ${slides.length}장 · 추정 학습 시간 약 ${st.minutes}분 (산문 ${st.prose}자, 코드 ${st.codeLines}줄, 그림 ${st.figures}개, 퀴즈 ${st.quizzes}개)`);
-  // 아래 두 줄은 안내다. 위반이 아니라서 console.info 로 낮추고 "참고"를 붙였다.
-  // 위반만 console.warn 을 쓴다.
+  // 아래 두 안내는 위반이 아니다. 그래서 console.info 로 낮추고 "참고"를 붙였다.
+  // console.warn 은 위반에만 쓴다.
   if (st.minutes < 50 || st.minutes > 140)
     console.info(`[concept-slides] 참고 — 추정 학습 시간 ${st.minutes}분. 목표는 60~120분이다. 위반은 아니지만 커리큘럼의 챕터 분할을 다시 봐라`);
   const goalCount = declaredGoals().length;
