@@ -100,14 +100,14 @@ code, pre, .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, 
 .slide[data-kind="goal"] .headline { font-size: 2.2em; }
 .slide[data-kind="cover"] .meta { color: var(--ink-2); font-size: .85em; }
 
-/* ── 1장: 한 줄 정의 ─────────────────────────────────── */
+/* ── 큰 한 줄 정의 — .headline 대신 쓰는 제목 ─────────── */
 .lede {
   margin: 0; font-size: 2.35em; line-height: 1.3; font-weight: 700;
   letter-spacing: -.02em; max-width: 20em; text-wrap: balance;
 }
 .lede em { font-style: normal; color: var(--accent); }
 
-/* ── 2장: 고통 시나리오 ──────────────────────────────── */
+/* ── intro 장: 독자가 겪어 본 상황 목록 ──────────────── */
 .pain { margin: 0; padding: 0 0 0 1em; list-style: none; display: grid; gap: .45em; }
 .pain li { position: relative; font-size: 1.15em; }
 .pain li::before {
@@ -117,7 +117,7 @@ code, pre, .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, 
 .pain li:last-child { color: var(--warn); font-weight: 600; }
 .pain li:last-child::before { background: var(--warn); }
 
-/* ── 3장: 비유 매핑표 ────────────────────────────────── */
+/* ── 비유 매핑표 — data-analogy 장 필수 (주로 intro) ─── */
 .map { border-collapse: collapse; width: 100%; font-size: .92em; }
 .map th, .map td { text-align: left; padding: .4em .7em; border-bottom: 1px solid var(--line); }
 .map thead th { font-size: .82em; letter-spacing: .04em; color: var(--ink-2); font-weight: 600; }
@@ -137,7 +137,7 @@ code, pre, .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, 
 .prose + .prose { margin-top: .75em; }
 .prose em { font-style: normal; font-weight: 600; color: var(--accent); }
 
-/* ── 4장: 메커니즘 단계 ──────────────────────────────── */
+/* ── precise 장: 메커니즘 단계 ───────────────────────── */
 .steps {
   margin: 0; padding: 0; list-style: none;
   counter-reset: s; display: grid; gap: .85em; max-width: 40em;
@@ -154,7 +154,7 @@ code, pre, .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, 
 .steps .why { color: var(--ink-2); }
 .steps .why::before { content: "왜 — "; color: var(--accent); font-weight: 600; }
 
-/* ── 6장: 흔한 오해 ──────────────────────────────────── */
+/* ── pitfall 장: 흔한 오해 ───────────────────────────── */
 .misconception { display: grid; gap: 1em; max-width: 42em; }
 .misconception > div { border-left: 3px solid var(--line); padding-left: 1em; }
 .misconception .myth { margin: 0 0 .3em; color: var(--warn); font-weight: 600; }
@@ -162,7 +162,7 @@ code, pre, .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, 
 .misconception .fact { margin: 0; }
 .misconception .fact::before { content: "사실은 "; color: var(--accent); font-weight: 700; }
 
-/* ── 7장: 확인 질문 (답을 접어둔다) ──────────────────── */
+/* ── 확인 퀴즈 — 목표마다 하나 (답을 접어둔다) ───────── */
 .quiz {
   border: 1px solid var(--line); border-radius: .5em; background: var(--panel);
   padding: .75em 1em; max-width: 42em;
@@ -199,7 +199,7 @@ pre .k { color: var(--accent); font-weight: 600; }  /* 키 / 키워드 */
   border-radius: .3em; padding: .08em .35em; font-size: .88em;
 }
 
-/* ── 7장: 정리 (최대 3개) ────────────────────────────── */
+/* ── closing 장: 정리 (최대 3개) ─────────────────────── */
 .takeaways { margin: 0; padding: 0; list-style: none; counter-reset: t; display: grid; gap: .6em; }
 .takeaways li {
   counter-increment: t; position: relative; padding-left: 2em;
@@ -853,11 +853,8 @@ console.log('E');</code></pre>
   }
 
   /* ── 자기검사 ────────────────────────────────────────────
-     이 검사기는 장 모양을 재던 것에서 학습 연결(목표 ↔ 설명 장 ↔ 퀴즈)을
-     보는 쪽으로 옮겨가는 중이다. 지금 살아 있는 것은 넘침·코드 해설·제목·
-     이모지·불릿 검사뿐이고, 학습 연결 게이트는 뒤 작업에서 붙는다.
-     장 단위 산문 하한은 폐기했다. 하한은 목표 단위 하나(1200자)로 가고
-     챕터 열기 장만 따로 400자를 받는다 — 이 둘도 뒤 작업에서 붙는다. */
+     학습 연결을 본다 — 목표 ↔ 설명 장 ↔ 퀴즈가 이어져 있는가.
+     산문 하한은 목표 단위 하나이고, 챕터 열기 장만 따로 받는다. */
   const TOPIC_TITLE = /(개요|소개|이란|이란\?|란\?|의 구조|의 특징|의 종류|의 장점|정리하면)\s*$/;
   const KNOWN_KINDS = ['cover', 'opening', 'goal', 'intro', 'precise', 'example', 'pitfall', 'closing'];
   const GOAL_KINDS  = ['goal', 'intro', 'precise', 'example', 'pitfall'];
