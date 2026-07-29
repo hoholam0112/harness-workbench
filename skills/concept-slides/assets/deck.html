@@ -1,0 +1,653 @@
+<!doctype html>
+<!--
+  concept-slides 뼈대 — 이 파일을 복사해서 <section class="slide"> 내용만 바꿔 쓴다.
+  CSS/JS는 손대지 않는다. 아래 예시 슬라이드는 전부 지우고 실제 내용으로 교체.
+
+  조작: ← → Space PageUp/Dn Home/End | o 오버뷰 | t 테마 | f 전체화면 | ? 도움말
+  인쇄(Cmd/Ctrl+P) → 1페이지 = 1슬라이드로 PDF 저장됨.
+-->
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>제목 — 개념 설명</title>
+<style>
+/* ── 테마 ─────────────────────────────────────────────── */
+:root {
+  --bg: #fbfaf8;   --panel: #ffffff;  --ink: #16181d;   --ink-2: #565d6b;
+  --line: #dfdcd5;  --accent: #1f6feb; --accent-soft: #e7f0fe;
+  --warn: #b4530a;  --warn-soft: #fdf1e3; --code-bg: #f3f1ec;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.06);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14161a;  --panel: #1b1e24;  --ink: #eceef2;   --ink-2: #a0a7b4;
+    --line: #333842; --accent: #6ea8fe; --accent-soft: #1c2b45;
+    --warn: #e8a15c; --warn-soft: #33261a; --code-bg: #22262d;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+}
+:root[data-theme="light"] {
+  --bg: #fbfaf8;  --panel: #fff;     --ink: #16181d;   --ink-2: #565d6b;
+  --line: #dfdcd5; --accent: #1f6feb; --accent-soft: #e7f0fe;
+  --warn: #b4530a; --warn-soft: #fdf1e3; --code-bg: #f3f1ec;
+  --shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.06);
+}
+:root[data-theme="dark"] {
+  --bg: #14161a;  --panel: #1b1e24;  --ink: #eceef2;   --ink-2: #a0a7b4;
+  --line: #333842; --accent: #6ea8fe; --accent-soft: #1c2b45;
+  --warn: #e8a15c; --warn-soft: #33261a; --code-bg: #22262d;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+}
+
+/* ── 기본 ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo",
+               "Segoe UI", system-ui, "Malgun Gothic", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  display: grid; place-items: center;
+  overflow: hidden;
+}
+code, pre, .mono { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+
+/* ── 무대 ─────────────────────────────────────────────── */
+.stage {
+  --h: 100vh;
+  container-type: size;    /* .slide가 cqw로 무대 크기를 참조한다 (자기 자신은 참조 못 하므로 부모에 건다) */
+  position: relative;
+  width: min(100vw, calc(var(--h) * 1.77778));
+  height: min(var(--h), 56.25vw);
+}
+.slide {
+  position: absolute; inset: 0;
+  overflow: hidden;
+  background: var(--bg);
+  /* 무대 폭의 1.4%. 발표용(2.3%)에서 낮췄다 — 이건 읽는 자료다. ≈18px @1280 */
+  font-size: 1.4cqw; line-height: 1.7;
+  display: flex; flex-direction: column;
+  gap: .8em;
+  padding: 2.2em 2.6em 2.1em;   /* 하단은 HUD를 피할 만큼만 */
+  word-break: keep-all;      /* 한글은 단어 중간에서 끊지 않는다 */
+  overflow-wrap: anywhere;   /* 단, 긴 영문/URL은 예외적으로 끊음 */
+}
+/* UA의 [hidden]{display:none}은 위 display:flex에 밀린다. 작성자 규칙으로 다시 세운다. */
+.slide[hidden] { display: none; }
+
+/* ── 헤드라인 = 완결된 문장 (Assertion) ───────────────── */
+.headline {
+  margin: 0; font-size: 1.85em; line-height: 1.28;
+  font-weight: 700; letter-spacing: -.02em;
+  max-width: 26em; text-wrap: balance;
+}
+.headline .hl { color: var(--accent); }
+.eyebrow {
+  margin: 0; font-size: .72em; font-weight: 600; letter-spacing: .1em;
+  color: var(--ink-2); text-transform: uppercase;
+}
+.body { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: .8em; }
+.sub { margin: 0; color: var(--ink-2); font-size: 1em; max-width: 38em; }
+
+/* ── 표지 / 섹션 구분 ─────────────────────────────────── */
+.slide[data-kind="cover"], .slide[data-kind="section"] { justify-content: center; gap: .6em; }
+.slide[data-kind="cover"] .headline { font-size: 2.6em; max-width: 18em; }   /* was 20ch */
+.slide[data-kind="section"] .headline { font-size: 2.2em; }
+.slide[data-kind="cover"] .meta { color: var(--ink-2); font-size: .85em; }
+
+/* ── 1장: 한 줄 정의 ─────────────────────────────────── */
+.slide[data-kind="define"] { justify-content: center; }
+.lede {
+  margin: 0; font-size: 2.35em; line-height: 1.3; font-weight: 700;
+  letter-spacing: -.02em; max-width: 20em; text-wrap: balance;
+}
+.lede em { font-style: normal; color: var(--accent); }
+
+/* ── 2장: 고통 시나리오 ──────────────────────────────── */
+.pain { margin: 0; padding: 0 0 0 1em; list-style: none; display: grid; gap: .45em; }
+.pain li { position: relative; font-size: 1.15em; }
+.pain li::before {
+  content: ""; position: absolute; left: -1em; top: .62em;
+  width: .42em; height: .42em; border-radius: 50%; background: var(--ink-2);
+}
+.pain li:last-child { color: var(--warn); font-weight: 600; }
+.pain li:last-child::before { background: var(--warn); }
+
+/* ── 3장: 비유 매핑표 ────────────────────────────────── */
+.map { border-collapse: collapse; width: 100%; font-size: .92em; }
+.map th, .map td { text-align: left; padding: .4em .7em; border-bottom: 1px solid var(--line); }
+.map thead th { font-size: .82em; letter-spacing: .04em; color: var(--ink-2); font-weight: 600; }
+.map tbody td:first-child { color: var(--ink-2); }
+.map tbody td:last-child { font-weight: 600; }
+.map tbody tr:last-child td { border-bottom: 0; }
+
+/* 비유가 깨지는 지점 — 생략 금지 */
+.caveat {
+  border: 1px dashed var(--warn); background: var(--warn-soft);
+  border-radius: .5em; padding: .7em .9em; font-size: .9em;
+}
+.caveat b { color: var(--warn); display: block; margin-bottom: .2em; font-size: .92em; }
+
+/* ── 산문 — 문단 하한 계산의 유일한 기준 ─────────────── */
+.prose { margin: 0; max-width: 38em; }
+.prose + .prose { margin-top: .75em; }
+.prose em { font-style: normal; font-weight: 600; color: var(--accent); }
+
+/* ── 4장: 메커니즘 단계 ──────────────────────────────── */
+.steps {
+  margin: 0; padding: 0; list-style: none;
+  counter-reset: s; display: grid; gap: .85em; max-width: 40em;
+}
+.steps li { counter-increment: s; position: relative; padding-left: 2.4em; }
+.steps li::before {
+  content: counter(s); position: absolute; left: 0; top: .1em;
+  width: 1.7em; height: 1.7em; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent);
+  font-size: .85em; font-weight: 700; display: grid; place-items: center;
+}
+.steps b { display: block; font-weight: 700; }
+/* 각 단계는 "무엇이 일어나는지" 다음에 "왜 그렇게 되는지"를 적는다 */
+.steps .why { color: var(--ink-2); }
+.steps .why::before { content: "왜 — "; color: var(--accent); font-weight: 600; }
+
+/* ── 6장: 흔한 오해 ──────────────────────────────────── */
+.misconception { display: grid; gap: 1em; max-width: 42em; }
+.misconception > div { border-left: 3px solid var(--line); padding-left: 1em; }
+.misconception .myth { margin: 0 0 .3em; color: var(--warn); font-weight: 600; }
+.misconception .myth::before { content: "이렇게 생각하기 쉽다 — "; font-weight: 400; opacity: .75; }
+.misconception .fact { margin: 0; }
+.misconception .fact::before { content: "사실은 "; color: var(--accent); font-weight: 700; }
+
+/* ── 7장: 확인 질문 (답을 접어둔다) ──────────────────── */
+.quiz {
+  border: 1px solid var(--line); border-radius: .5em; background: var(--panel);
+  padding: .75em 1em; max-width: 42em;
+}
+.quiz summary { cursor: pointer; font-weight: 600; }
+.quiz summary::marker { color: var(--accent); }
+.quiz .prose { margin-top: .7em; color: var(--ink-2); }
+
+/* ── 레이아웃 헬퍼 ───────────────────────────────────── */
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.6em; flex: 1; min-height: 0; align-items: center; }
+.split.wide-left  { grid-template-columns: 1.4fr 1fr; }
+.split.wide-right { grid-template-columns: 1fr 1.4fr; }
+.stack { display: flex; flex-direction: column; gap: .7em; min-width: 0; }
+.center { justify-content: center; align-items: center; text-align: center; }
+
+/* ── 시각자료 ────────────────────────────────────────── */
+.figure { flex: 1; min-height: 0; display: grid; place-items: center; }
+.figure svg { width: 100%; height: 100%; max-height: 100%; overflow: visible; }
+.figure figcaption { margin-top: .5em; font-size: .78em; color: var(--ink-2); text-align: center; }
+figure { margin: 0; }
+
+/* ── 코드 ────────────────────────────────────────────── */
+/* 가로 스크롤바가 보이면 결함이다. 독자는 스크롤할 수 없다 — 코드 줄을 줄여라.
+   2단 배치에서는 한 줄 40칸, 전체 폭에서는 70칸이 한계. */
+pre {
+  margin: 0; background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: .5em; padding: .8em 1em; overflow: auto;
+  font-size: .7em; line-height: 1.6; tab-size: 2;
+}
+pre .c { color: var(--ink-2); }         /* 주석 */
+pre .k { color: var(--accent); font-weight: 600; }  /* 키 / 키워드 */
+:not(pre) > code {
+  background: var(--code-bg); border: 1px solid var(--line);
+  border-radius: .3em; padding: .08em .35em; font-size: .88em;
+}
+
+/* ── 7장: 정리 (최대 3개) ────────────────────────────── */
+.takeaways { margin: 0; padding: 0; list-style: none; counter-reset: t; display: grid; gap: .6em; }
+.takeaways li {
+  counter-increment: t; position: relative; padding-left: 2em;
+  font-size: 1.12em; font-weight: 500;
+}
+.takeaways li::before {
+  content: counter(t); position: absolute; left: 0; top: .1em;
+  width: 1.45em; height: 1.45em; border-radius: 50%;
+  background: var(--accent-soft); color: var(--accent);
+  font-size: .78em; font-weight: 700; display: grid; place-items: center;
+}
+
+/* ── 뱃지 / 강조 ─────────────────────────────────────── */
+.tag {
+  display: inline-block; font-size: .7em; font-weight: 600; letter-spacing: .04em;
+  padding: .2em .6em; border-radius: 999px;
+  background: var(--accent-soft); color: var(--accent);
+}
+mark { background: var(--accent-soft); color: inherit; padding: .05em .2em; border-radius: .2em; }
+
+/* ── HUD ─────────────────────────────────────────────── */
+.hud {
+  position: fixed; left: 0; right: 0; bottom: 0; height: 2.4rem;
+  display: flex; align-items: center; gap: .9rem; padding: 0 1rem;
+  font-size: .72rem; color: var(--ink-2); pointer-events: none; z-index: 10;
+}
+.hud .bar { flex: 1; height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.hud .bar i { display: block; height: 100%; background: var(--accent); transition: width .18s ease; }
+.hud .count { font-variant-numeric: tabular-nums; }
+.hud .hint { opacity: .55; }
+
+#help {
+  position: fixed; inset: 0; z-index: 20; display: none;
+  place-items: center; background: rgba(0,0,0,.45); backdrop-filter: blur(3px);
+}
+body.help-on #help { display: grid; }
+#help div {
+  background: var(--panel); border: 1px solid var(--line); border-radius: .7rem;
+  padding: 1.4rem 1.7rem; box-shadow: var(--shadow); font-size: .85rem; line-height: 2;
+}
+#help kbd {
+  font: inherit; font-family: ui-monospace, monospace; background: var(--code-bg);
+  border: 1px solid var(--line); border-radius: .25em; padding: .1em .4em; margin-right: .5em;
+}
+
+/* ── 오버뷰 (o) ──────────────────────────────────────── */
+body.overview { overflow: auto; display: block; }
+body.overview .stage {
+  container-type: normal;   /* 높이가 auto가 되므로 size 컨테이너를 해제한다 */
+  width: 100%; height: auto;
+  display: flex; flex-wrap: wrap; align-content: flex-start;
+  gap: 1rem; padding: 1rem 1rem 4rem;
+}
+body.overview .slide[hidden] { display: flex !important; }
+/* 썸네일은 원본 크기(1280×720)로 두고 zoom으로 축소한다. zoom은 transform과 달리
+   레이아웃 박스까지 줄여서 flex 배치가 그대로 맞는다. */
+body.overview .slide {
+  position: relative; inset: auto;
+  width: 1280px; height: 720px; font-size: 17.92px;
+  zoom: .21;
+  border: 1px solid var(--line); border-radius: 1.5rem; cursor: pointer;
+}
+body.overview .slide.is-active { outline: 2px solid var(--accent); outline-offset: 2px; }
+body.overview .hud .hint::after { content: " — 클릭해서 이동"; }
+
+/* ── 인쇄 → PDF ──────────────────────────────────────── */
+@page { size: landscape; margin: 0; }
+@media print {
+  html, body { height: auto; overflow: visible; display: block; background: #fff; }
+  .hud, #help { display: none !important; }
+  .stage { container-type: normal; width: 100%; height: auto; display: block; }
+  .slide[hidden] { display: flex !important; }
+  .slide {
+    position: relative; inset: auto; width: 100%; aspect-ratio: 16/9;
+    font-size: 1.4vw; zoom: 1;
+    break-after: page; page-break-after: always; box-shadow: none; border: 0;
+  }
+  .slide:last-child { break-after: auto; page-break-after: auto; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<main class="stage" id="stage">
+
+  <section class="slide" data-kind="cover">
+    <p class="eyebrow">쿠버네티스 기초</p>
+    <h1 class="headline">파드는 <span class="hl">같이 죽는 것들</span>을 묶는 단위다</h1>
+    <p class="meta">읽는 데 약 6분</p>
+  </section>
+
+  <section class="slide" data-kind="define" data-concept="파드" data-track="full">
+    <p class="eyebrow">파드 (Pod)</p>
+    <p class="lede">파드는 컨테이너 묶음인데,<br>반드시 같은 기계에서<br><em>같이 살고 같이 죽는다.</em></p>
+  </section>
+
+  <section class="slide" data-kind="why" data-concept="파드" data-track="full">
+    <h2 class="headline">따로 띄우면 붙어 있어야 할 둘이 <span class="hl">갈라진다</span></h2>
+    <div class="split wide-left">
+      <div class="stack">
+        <p class="prose">앱 컨테이너와 로그 수집 컨테이너를 따로 띄웠다고 하자. 로그
+        수집기는 앱이 디스크에 쓴 파일을 읽어서 어딘가로 보내는 일을 한다. 둘은 같은
+        디스크를 봐야만 동작한다.</p>
+        <p class="prose">그런데 어느 서버에 무엇을 올릴지는 스케줄러가 정한다. 스케줄러는
+        이 둘이 붙어 있어야 한다는 걸 모른다. 그래서 앱은 서버 A에, 로그 수집기는
+        서버 B에 올라간다. 로그 수집기는 이제 아무 파일도 못 읽는다.</p>
+        <p class="prose">더 나쁜 건 이게 매번 재현되지 않는다는 점이다. 운이 좋으면 같은
+        서버에 올라가서 잘 돈다. 그래서 원인을 찾는 데 오래 걸린다.</p>
+      </div>
+      <figure class="figure">
+        <svg viewBox="0 0 300 150" role="img" aria-label="앱과 로그 수집기가 서로 다른 서버에 배치되어 파일을 공유하지 못하는 그림">
+          <g fill="none" stroke="currentColor" stroke-width="1.5" opacity=".4">
+            <rect x="6" y="30" width="120" height="86" rx="6"/>
+            <rect x="174" y="30" width="120" height="86" rx="6"/>
+          </g>
+          <g font-size="10" fill="currentColor" opacity=".6" text-anchor="middle">
+            <text x="66" y="22">서버 A</text><text x="234" y="22">서버 B</text>
+          </g>
+          <g fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5">
+            <rect x="26" y="58" width="80" height="30" rx="5"/>
+            <rect x="194" y="58" width="80" height="30" rx="5"/>
+          </g>
+          <g font-size="10" fill="var(--accent)" text-anchor="middle">
+            <text x="66" y="77">app</text><text x="234" y="77">log</text>
+          </g>
+          <path d="M110 73 H140 M160 73 H190" stroke="var(--warn)" stroke-width="1.5" stroke-dasharray="4 3"/>
+          <path d="M142 65 L158 81 M158 65 L142 81" stroke="var(--warn)" stroke-width="2"/>
+          <text x="150" y="104" font-size="9" fill="var(--warn)" text-anchor="middle">파일 공유 불가</text>
+        </svg>
+      </figure>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="analogy" data-concept="파드" data-track="full">
+    <h2 class="headline">파드는 <span class="hl">아파트 한 세대</span>다</h2>
+    <div class="split">
+      <div class="stack">
+        <p class="prose">아파트 한 세대를 생각해보자. 그 안에 사는 사람들은 현관 주소를
+        하나로 공유한다. 택배는 세대 주소로 오지 개인에게 오지 않는다. 거실도 같이 쓴다.
+        그리고 이사를 가면 세대 전체가 함께 움직인다.</p>
+        <p class="prose">파드가 딱 이렇다. 안에 든 컨테이너들이 IP 하나를 공유하고,
+        볼륨 하나를 같이 보고, 배치될 때 통째로 같이 배치된다.</p>
+        <p class="prose">하필 "건물"이 아니라 "세대"인 데는 이유가 있다. 건물은 한 세대가
+        비어도 나머지가 그대로 살지만, 세대는 그렇게 쪼갤 수 없다. 어디까지가 운명을
+        함께하는 범위인지 긋는 것 — 파드가 정하는 건 크기가 아니라 그 경계선이다.</p>
+        <table class="map">
+          <thead><tr><th>아파트</th><th>실제</th></tr></thead>
+          <tbody>
+            <tr><td>한 세대</td><td>파드 하나</td></tr>
+            <tr><td>같이 사는 구성원</td><td>컨테이너들</td></tr>
+            <tr><td>세대 현관 주소</td><td>공유하는 파드 IP</td></tr>
+            <tr><td>공용 거실</td><td>공유 볼륨</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="stack">
+        <figure class="figure">
+          <svg viewBox="0 0 220 140" role="img" aria-label="한 세대 안에 구성원 둘과 공용 거실이 있는 그림">
+            <rect x="12" y="18" width="196" height="108" rx="8" fill="none" stroke="currentColor" stroke-width="1.5" opacity=".45"/>
+            <text x="110" y="12" font-size="10" fill="currentColor" opacity=".6" text-anchor="middle">101동 502호</text>
+            <g fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5">
+              <rect x="28" y="32" width="74" height="34" rx="5"/>
+              <rect x="118" y="32" width="74" height="34" rx="5"/>
+              <rect x="28" y="80" width="164" height="30" rx="5"/>
+            </g>
+            <g font-size="10" fill="var(--accent)" text-anchor="middle">
+              <text x="65" y="53">구성원 1</text><text x="155" y="53">구성원 2</text>
+              <text x="110" y="99">공용 거실</text>
+            </g>
+          </svg>
+        </figure>
+        <p class="caveat">
+          <b>⚠ 이 비유가 깨지는 곳</b>
+          가족은 이사해도 그 사람들이다. 파드는 <mark>옮겨가지 않는다.</mark> 버려지고
+          새로 태어난다.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="how" data-concept="파드" data-track="full">
+    <h2 class="headline">같은 주소를 공유하는 건 <span class="hl">빈 컨테이너 하나</span> 덕이다</h2>
+    <div class="split wide-left">
+      <ol class="steps">
+        <li><b>파드가 배치되면 아무 일도 안 하는 컨테이너가 먼저 뜬다.</b>
+          <span class="prose why">이 컨테이너가 네트워크 네임스페이스를 만들어 붙잡고
+          있어야, 내 앱 컨테이너가 죽었다 살아나도 IP가 유지된다. 흔히 pause
+          컨테이너라고 부른다.</span></li>
+        <li><b>내 컨테이너들은 자기 네임스페이스를 만들지 않고 그것에 올라탄다.</b>
+          <span class="prose why">그래서 IP도 포트 공간도 하나가 된다. 서로를
+          <code>localhost</code>로 부를 수 있는 이유가 이것이다. 파드 안에서는 상대를
+          찾는 별도의 장치가 필요 없다.</span></li>
+        <li><b>포트가 겹치면 나중 컨테이너가 뜨지 못한다.</b>
+          <span class="prose why">주소 공간이 하나뿐이라서 그렇다. 별개의 기계 두 대에
+          각각 8080을 여는 것과는 사정이 다르다. 같은 포트를 여는 컨테이너 둘은 한
+          파드에 넣을 수 없다.</span></li>
+        <li><b>볼륨은 파드에 붙고, 컨테이너들이 그걸 각자 마운트한다.</b>
+          <span class="prose why">컨테이너가 아니라 파드가 소유자다. 그래서 컨테이너
+          하나가 재시작해도 파일이 남아 있다. 볼륨의 수명은 파드의 수명을 따른다.</span></li>
+      </ol>
+      <figure class="figure">
+        <svg viewBox="0 0 220 150" role="img" aria-label="파드 안에서 pause 컨테이너가 네트워크 네임스페이스를 잡고 앱과 로그 컨테이너가 그것을 공유하는 구조">
+          <rect x="8" y="16" width="204" height="120" rx="8" fill="none" stroke="var(--accent)" stroke-width="1.5"/>
+          <text x="14" y="30" font-size="9" fill="var(--accent)">Pod · IP 10.1.0.7</text>
+          <rect x="24" y="38" width="172" height="26" rx="4" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/>
+          <text x="110" y="55" font-size="9" fill="var(--accent)" text-anchor="middle">네트워크 네임스페이스</text>
+          <g fill="none" stroke="currentColor" stroke-width="1.5" opacity=".55">
+            <rect x="24" y="78" width="82" height="30" rx="4"/>
+            <rect x="114" y="78" width="82" height="30" rx="4"/>
+          </g>
+          <g font-size="9" fill="currentColor" opacity=".75" text-anchor="middle">
+            <text x="65" y="97">app</text><text x="155" y="97">log</text>
+          </g>
+          <g stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 3">
+            <path d="M65 78 V64"/><path d="M155 78 V64"/>
+          </g>
+          <text x="110" y="126" font-size="9" fill="currentColor" opacity=".6" text-anchor="middle">둘 다 같은 주소를 쓴다</text>
+        </svg>
+      </figure>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="real" data-concept="파드" data-track="full">
+    <h2 class="headline">한 파일에 <span class="hl">같이 살 것들</span>을 나열한다</h2>
+    <div class="split">
+      <div class="stack">
+        <pre><code>apiVersion: v1
+<span class="k">kind</span>: Pod
+metadata:
+  <span class="k">name</span>: web
+spec:
+  <span class="k">containers</span>:
+    - name: app
+      image: nginx
+    - name: log-collector
+      image: fluent-bit
+  <span class="k">volumes</span>:
+    - name: logs
+      emptyDir: {}</code></pre>
+        <p class="prose"><code>containers</code> 아래 목록에 든 것들이 한 세대 식구다.
+        <code>volumes</code>는 파드에 붙는다 — 컨테이너 안이 아니라 바깥에 적힌다는 점을
+        보라. 소유자가 파드라는 게 들여쓰기로 드러난다.</p>
+      </div>
+      <div class="stack">
+        <pre><code>$ kubectl get pod web
+
+NAME  READY  STATUS
+web   <span class="k">2/2</span>    Running</code></pre>
+        <p class="prose"><code>READY 2/2</code>를 읽는 법. 앞 숫자가 준비된 컨테이너 수,
+        뒤가 전체다. 하나가 죽으면 <code>1/2</code>가 되고 파드는 준비된 상태가 아니게
+        된다. 살아 있는 컨테이너가 하나 있어도 그렇다. 이게 "같이 산다"의 실체다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="myth" data-concept="파드" data-track="full">
+    <h2 class="headline">파드를 <span class="hl">작은 가상머신</span>으로 생각하면 어긋난다</h2>
+    <div class="misconception">
+      <div>
+        <p class="myth prose">파드는 컨테이너를 여러 개 넣으라고 만든 것이다.</p>
+        <p class="fact prose">대부분의 파드는 컨테이너 하나짜리다. 여럿을 넣는 건 서로
+        같은 디스크나 주소를 봐야만 하는 예외적인 경우다. 붙을 이유가 없으면 따로 띄운다.</p>
+      </div>
+      <div>
+        <p class="myth prose">파드가 다른 노드로 옮겨간다.</p>
+        <p class="fact prose">옮겨가지 않는다. 원래 파드는 사라지고 새 파드가 태어난다.
+        이름도 IP도 새로 받는다. 그래서 파드 IP를 어딘가에 적어두면 안 된다.</p>
+      </div>
+      <div>
+        <p class="myth prose">컨테이너 하나가 죽으면 파드가 죽는다.</p>
+        <p class="fact prose">기본값에서는 그 컨테이너만 재시작한다. 파드는 살아 있고
+        IP도 그대로다. 앞에서 본 빈 컨테이너가 네임스페이스를 계속 붙잡고 있기 때문이다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="slide" data-kind="recap" data-concept="파드" data-track="full">
+    <h2 class="headline">파드는 컨테이너 묶음인데, <span class="hl">같이 살고 같이 죽는다</span></h2>
+    <ol class="takeaways">
+      <li>같이 있어야 하는 것만 한 파드에 넣는다. 나머지는 따로 띄운다.</li>
+      <li>파드 안에서는 <code>localhost</code>로 서로를 부른다. 주소를 공유하니까.</li>
+      <li>파드는 옮겨지지 않는다. 죽고 새로 태어난다.</li>
+    </ol>
+    <details class="quiz">
+      <summary>파드 IP를 설정 파일에 적어두면 왜 곧 깨질까?</summary>
+      <p class="prose">파드는 재배치될 때 옮겨가는 게 아니라 버려지고 새로 만들어지기
+      때문이다. 새 파드는 새 IP를 받는다. 그래서 이름으로 찾는 다른 장치가 필요해지는데,
+      그게 서비스(Service)다.</p>
+    </details>
+  </section>
+
+</main>
+
+<div class="hud">
+  <span class="count"><b id="cur">1</b> / <span id="total">1</span></span>
+  <span class="bar"><i id="fill"></i></span>
+  <span class="hint">? 도움말</span>
+</div>
+
+<div id="help"><div>
+  <div><kbd>← →</kbd>이동 · <kbd>Space</kbd>다음</div>
+  <div><kbd>Home End</kbd>처음/끝</div>
+  <div><kbd>o</kbd>전체 보기</div>
+  <div><kbd>t</kbd>테마 · <kbd>f</kbd>전체화면</div>
+  <div><kbd>Esc</kbd>닫기 · <kbd>Cmd/Ctrl+P</kbd>PDF로 저장</div>
+</div></div>
+
+<script>
+(() => {
+  const slides = [...document.querySelectorAll('.slide')];
+  const stage = document.getElementById('stage');
+  const cur = document.getElementById('cur'), fill = document.getElementById('fill');
+  document.getElementById('total').textContent = slides.length;
+  let i = 0;
+
+  const clamp = n => Math.max(0, Math.min(slides.length - 1, n));
+
+  function render() {
+    slides.forEach((s, n) => {
+      s.hidden = n !== i;
+      s.classList.toggle('is-active', n === i);
+    });
+    cur.textContent = i + 1;
+    fill.style.width = ((i + 1) / slides.length * 100) + '%';
+  }
+
+  function go(n, push = true) {
+    i = clamp(n);
+    render();
+    if (push) history.replaceState(null, '', '#' + (i + 1));
+  }
+
+  const overview = on => {
+    document.body.classList.toggle('overview', on);
+    if (!on) render();
+    else slides.forEach(s => { s.hidden = true; });  // CSS가 다시 보이게 함
+  };
+
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const k = e.key;
+    if (k === 'Escape') {
+      document.body.classList.remove('help-on');
+      if (document.body.classList.contains('overview')) overview(false);
+      return;
+    }
+    if (k === '?' || k === '/') { document.body.classList.toggle('help-on'); return; }
+    if (k === 'o' || k === 'O') { overview(!document.body.classList.contains('overview')); return; }
+    if (k === 't' || k === 'T') {
+      const dark = matchMedia('(prefers-color-scheme: dark)').matches;
+      const now = document.documentElement.dataset.theme || (dark ? 'dark' : 'light');
+      document.documentElement.dataset.theme = now === 'dark' ? 'light' : 'dark';
+      return;
+    }
+    if (k === 'f' || k === 'F') {
+      document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+      return;
+    }
+    if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(k)) { e.preventDefault(); go(i + 1); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(k)) { e.preventDefault(); go(i - 1); }
+    else if (k === 'Home') go(0);
+    else if (k === 'End') go(slides.length - 1);
+  });
+
+  stage.addEventListener('click', e => {
+    if (e.target.closest('a, button, input, pre')) return;
+    if (document.body.classList.contains('overview')) {
+      const s = e.target.closest('.slide');
+      if (s) { overview(false); go(slides.indexOf(s)); }
+      return;
+    }
+    go(i + 1);
+  });
+
+  let x0 = null;
+  stage.addEventListener('touchstart', e => { x0 = e.changedTouches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', e => {
+    if (x0 === null) return;
+    const dx = e.changedTouches[0].clientX - x0;
+    if (Math.abs(dx) > 45) go(i + (dx < 0 ? 1 : -1));
+    x0 = null;
+  }, { passive: true });
+
+  addEventListener('hashchange', () => go((parseInt(location.hash.slice(1), 10) || 1) - 1, false));
+  go((parseInt(location.hash.slice(1), 10) || 1) - 1, false);
+
+  /* ── 자기검사 ────────────────────────────────────────────
+     이건 읽는 자료다. 옛 120자 "상한"은 폐기했다 — 발표자가 말로
+     채운다는 전제가 사라졌기 때문이다. 대신 문단 "하한"을 건다.
+     하한은 .prose 문단만 센다. 불릿·표·코드로는 통과할 수 없다. */
+  const TOPIC_TITLE = /(개요|소개|이란|이란\?|란\?|의 구조|의 특징|의 종류|의 장점|정리하면)\s*$/;
+  const KNOWN_KINDS = ['cover', 'opening', 'goal', 'intro', 'precise', 'example', 'pitfall', 'closing'];
+  const GOAL_KINDS  = ['goal', 'intro', 'precise', 'example', 'pitfall'];
+  const BODY_KINDS  = ['intro', 'precise', 'example', 'pitfall'];   // 목표를 실제로 설명하는 장
+  const BEATS       = ['intro', 'precise', 'example'];              // 이 순서를 지켜야 한다
+  const NO_GOAL_KINDS = ['cover', 'opening', 'closing'];
+
+  // 하한 집계는 .prose 만 센다. <details> 내부는 펼쳐져 있어도 세지 않는다.
+  const proseLen = (root) => [...root.querySelectorAll('.prose')]
+    .filter(e => !e.closest('details'))
+    .map(e => e.textContent.replace(/\s+/g, ' ').trim())
+    .join(' ').length;
+
+  function check() {
+    const cw = document.body.className, hash = location.hash;
+    const issues = [];
+    document.body.className = '';
+
+    slides.forEach((s, n) => {
+      slides.forEach((x, m) => { x.hidden = m !== n; });
+      const kind = s.dataset.kind || '?';
+      const at = `${n + 1}번(${kind})`;
+      const add = (m) => issues.push(`${at}: ${m}`);
+
+      if (s.scrollHeight - s.clientHeight > 2) add(`세로로 ${s.scrollHeight - s.clientHeight}px 넘침 — 레이아웃을 고쳐라. 글을 깎지 마라`);
+      if (s.scrollWidth - s.clientWidth > 2) add('가로로 넘침');
+      s.querySelectorAll('pre').forEach(p => {
+        if (p.scrollWidth - p.clientWidth > 2) add('코드에 가로 스크롤바 — 줄을 줄여라');
+      });
+
+      // 코드에는 해설이 딸려야 한다 (같은 부모 안 .prose — Spatial Contiguity)
+      s.querySelectorAll('pre').forEach(p => {
+        if (p.parentElement === s)
+          add('코드가 슬라이드 직속이다 — .stack 같은 컨테이너로 감싸라. 안 그러면 슬라이드 반대편 문단이 해설로 인정돼 이 검사가 무력해진다');
+        else if (!p.parentElement.querySelector('.prose'))
+          add('코드에 해설 문단이 없다 — 같은 부모 안에 .prose를 둬라');
+      });
+
+      const bullets = s.querySelectorAll('.pain li, .takeaways li').length;
+      if (bullets > 6) add(`불릿 ${bullets}개 (한계 6)`);
+
+      const emoji = (s.textContent.match(/\p{Extended_Pictographic}/gu) || []).length;
+      if (emoji > 2) add(`이모지 ${emoji}개 (한계 2) — 장식을 지워라`);
+
+      const head = s.querySelector('.headline, .lede');
+      if (!head) add('제목이 없다');
+      else if (TOPIC_TITLE.test(head.textContent.replace(/\s+/g, ' ').trim()))
+        add(`제목이 주제어다 — 완결된 문장으로 바꿔라 ("${head.textContent.trim().slice(0, 20)}…")`);
+    });
+
+    document.body.className = cw;
+    if (hash) location.hash = hash;
+    render();
+    return issues;
+  }
+  window.__deckCheck = check;
+  const found = check();
+  if (found.length) console.warn('[concept-slides] 품질 게이트 위반 ' + found.length + '건:\n' + found.map(s => ' • ' + s).join('\n'));
+  else console.info('[concept-slides] 품질 게이트 통과 — 슬라이드 ' + slides.length + '장');
+})();
+</script>
+</body>
+</html>
