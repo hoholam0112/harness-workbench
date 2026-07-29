@@ -209,6 +209,22 @@ pre .k { color: var(--accent); font-weight: 600; }  /* 키 / 키워드 */
   font-size: .78em; font-weight: 700; display: grid; place-items: center;
 }
 
+/* 챕터 열기 장 — 이 챕터가 끝나면 할 수 있게 되는 것 */
+.outcomes { margin: 0; padding: 0; list-style: none; counter-reset: o; display: grid; gap: .55em; }
+.outcomes li {
+  counter-increment: o; position: relative; padding-left: 2em;
+  font-size: 1.08em; font-weight: 600;
+}
+.outcomes li::before {
+  content: counter(o); position: absolute; left: 0; top: .1em;
+  width: 1.4em; height: 1.4em; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--accent); color: var(--bg);
+  font-size: .72em; font-weight: 700;
+}
+.progress-note { color: var(--ink-2); font-size: .85em; }
+.progress-note a { color: var(--accent); }
+
 /* ── 뱃지 / 강조 ─────────────────────────────────────── */
 .tag {
   display: inline-block; font-size: .7em; font-weight: 600; letter-spacing: .04em;
