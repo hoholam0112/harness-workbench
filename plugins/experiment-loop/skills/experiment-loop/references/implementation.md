@@ -4,9 +4,9 @@
 
 ## Must read first
 
-The **always-read core** (SKILL.md → "Progressive context loading, with an
-always-read core"): `docs/glossary.md`, `docs/index.md`, the always-read core
-knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage:
+The **always-read core** (SKILL.md → "Always-read core"):
+`docs/glossary.md`, `docs/index.md`, the always-read core knowledge docs, and
+`docs/agent/guidance/human-feedback.md`. Plus for this stage:
 
 - this loop's `tech-design-spec.md` — what to build and how it is verified;
 - this loop's `implementation-plan.md` and its task specs — the tasks, order,
@@ -35,7 +35,7 @@ log actually advances — this is what stage 4's stall check reads.
 
 ## Verification gate
 
-Run the gate (references/verification-gate.md) at each checkpoint the
+Run the gate (../../shared/verification-gate.md) at each checkpoint the
 implementation plan marks — at minimum once after all tasks. Criteria:
 
 - the code matches the Tech Design Spec;

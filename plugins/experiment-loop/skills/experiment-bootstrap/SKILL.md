@@ -1,3 +1,55 @@
+---
+name: experiment-bootstrap
+description: Onboards a project onto the ML experiment loop - stage 0, run once per project. Use when the user asks to set up, onboard, or initialize the experiment loop - "이 프로젝트 온보딩해줘", "실험 루프 세팅해줘", "부트스트랩 실행해줘", "실험 루프 붙여줘" - or when docs/index.md does not exist so the loop cannot run yet. Restructures the docs tree, seeds the LLM wiki from existing code, writes CLAUDE.md, guides the user through a PRD, and identifies required MCP servers.
+---
+
+<!-- BEGIN shared-principles -->
+## Core Principles
+
+Paths below are relative to this skill's own directory.
+
+- **Code grounding.** Docs are for fast context only. Read the actual code
+  before judging, implementing, or verifying. When docs and code disagree,
+  trust the code.
+- **Claim-level sourcing.** Every claim in an agent-authored document cites its
+  source file (and line where useful).
+- **Template compliance (binding).** Create every document by copying its
+  template from `../../shared/templates/`, never by writing freely. Keep every
+  section heading unrenamed and in order, fill each with real content, delete
+  every guidance comment and `FILL` marker, and meet stated quantities
+  literally. "N/A" needs one sentence of why. The template is a floor, not a
+  cap — additions are welcome. Full rules:
+  `../../shared/template-compliance.md`. A deviation is a Major issue, not a
+  stylistic one.
+- **Always-read core.** On user input, always read `docs/glossary.md`,
+  `docs/index.md`, every knowledge doc that `index.md` marks as always-read
+  core, and `docs/agent/guidance/human-feedback.md`. Read these every time —
+  judging whether you need them is exactly how known facts get skipped. Align
+  the user's terms against the glossary, and ask them rather than guess when a
+  term they used is ambiguous. Only then open what the specific task needs.
+- **Log human input.** Append every human choice, instruction, correction, and
+  stated preference to `docs/agent/loops/<loop-id>/loop-log.md` as it happens.
+  Completeness beats polish.
+- **Durable facts go to the wiki immediately.** The moment the user states a
+  fact or constraint that stays true beyond this turn, invoke the
+  `experiment-wiki` skill and write it to its home now — not at wrap-up. Then
+  tell the user in one line where you saved it. If the user tells you something
+  you should already know, that is proof the fact was never captured or is not
+  being read: capture it right then, and fix why it was not read.
+- **Escalation.** Stop, set `status: "escalated"` in `state.json`, record the
+  question in `pending_decisions`, describe the situation to the user, and
+  present 2-3 options.
+- **Verification gates** run in subagents per
+  `../../shared/verification-gate.md`. Subagents verify; they never execute the
+  work. After a gate passes, summarize what was produced before moving on.
+- **Language.** All docs and code in English. `docs/glossary.md` may contain
+  Korean. Talk to the user in Korean (technical terms in English).
+- **Plain language.** State the conclusion first, then a short reason. One idea
+  per sentence; keep sentences short. Gloss a technical term the first time you
+  use it. Prefer plain Korean over transliterated English (write "출처를 따라갈
+  수 있는지", not "추적성"). Prefer concrete verbs over abstract nouns.
+<!-- END shared-principles -->
+
 # Stage 0: Bootstrap (once per project)
 
 Onboard a project onto the experiment loop. Run only when `docs/index.md`
@@ -15,29 +67,29 @@ the code structure, the experiment/training entry points, and the test setup
 
 ## Deliverables
 
-- Doc layout per `references/llm-wiki.md` "Layout — what goes where", adapted to
-  the project's existing conventions.
+- Doc layout per the `experiment-wiki` skill's "Layout — what goes where"
+  section, adapted to the project's existing conventions.
 - `docs/glossary.md` — terminology used in the project and by the user
   (the one document where Korean is allowed).
 - `docs/index.md` — what every document is for and when an agent should read
   it, including the layout decisions made here. Later stages navigate by
   this file. It also marks the **always-read core**: the small set of knowledge
   docs holding must-know project facts and constraints that every stage reads
-  every time (see `references/llm-wiki.md` "Always-read core"). Seed this set
-  with the core facts learned during onboarding.
+  every time (see the `experiment-wiki` skill's "Always-read core" section).
+  Seed this set with the core facts learned during onboarding.
 - `docs/CONVENTIONS.md` — the wiki's rules: document authority (human `raw/`
   is top authority), priority when sources disagree, and the frontmatter spec.
 - Seeded `docs/agent/knowledge/` — initial knowledge documents filled from the
   existing code and docs (not just empty directories): data pipeline, dataset,
   model/architecture, evaluation setup, environment. Each claim cites its
   source file. Includes:
-  - `code-map.md` (from `templates/code-map.md`) — where code lives and where
+  - `code-map.md` (from `../../shared/templates/code-map.md`) — where code lives and where
     to look to change something: layout, entry points, key modules, configs.
     This is where the step-1 code analysis is written down instead of thrown
     away.
-  - `experiment-ledger.md` (from `templates/experiment-ledger.md`) — start it
+  - `experiment-ledger.md` (from `../../shared/templates/experiment-ledger.md`) — start it
     from any experiments already run before onboarding, else an empty table.
-  - `artifact-map.md` (from `templates/artifact-map.md`) — registry of
+  - `artifact-map.md` (from `../../shared/templates/artifact-map.md`) — registry of
     non-code, non-doc artifacts (checkpoints, datasets, run outputs, plots).
     Record the project's artifact storage convention (where they live) and any
     artifacts that already exist; else an empty table.
@@ -49,7 +101,7 @@ the code structure, the experiment/training entry points, and the test setup
     **always-read core** in `index.md` — every later loop must see the targets
     without being told to look. If the PRD says "No serving", do not create the
     file.
-- `docs/agent/guidance/human-feedback.md` (from `templates/human-feedback.md`)
+- `docs/agent/guidance/human-feedback.md` (from `../../shared/templates/human-feedback.md`)
   — log of human corrections and stated preferences, read before every stage's
   work. Seed it with any standing preferences the user gives during onboarding;
   else empty.
@@ -57,7 +109,7 @@ the code structure, the experiment/training entry points, and the test setup
   build/test/run commands, project conventions, and the communication rule
   (explain to the user in plain Korean; see SKILL.md "Plain language").
 - A PRD in `docs/human/raw/`. If none exists, guide the user through writing one
-  using `templates/prd.md`: interview them section by section — the user
+  using `../../shared/templates/prd.md`: interview them section by section — the user
   authors the content, you scribe. Settle **Serving Requirements** explicitly:
   it is the switch that decides whether every later loop must measure serving
   numbers, so "we'll figure it out later" is not an acceptable answer — get
@@ -75,14 +127,10 @@ the code structure, the experiment/training entry points, and the test setup
    docs.
 2. Propose the layout adaptation to the user (what moves where, what gets
    created). Get agreement before moving any files.
-3. Restructure. Classify existing docs on three axes: management subject
-   (human-authored `human/raw/` vs agent-generated `agent/`), usage period
-   (loop-scoped `agent/loops/` vs project-persistent `agent/knowledge/`, with
-   decision records in `agent/knowledge/decisions/` and agent working-rules in
-   `agent/guidance/`), and topic. Human-view outputs go in `shared/`. Group
-   persistent project docs by topic into `docs/agent/knowledge/` subdirectories
-   so later stages can update them in parallel. Write `glossary.md` and
-   `CONVENTIONS.md`.
+3. Restructure. **Invoke the `experiment-wiki` skill** for the layout rules -
+   the human/agent split, the knowledge/guidance/decisions buckets, and where
+   each kind of document goes. Do not reproduce those rules here. Apply them to
+   this project's existing docs, then write `glossary.md` and `CONVENTIONS.md`.
 4. Seed the wiki: from the code and existing docs, write the initial
    `docs/agent/knowledge/` documents (code map, data pipeline, dataset, model,
    eval setup, environment). Write the step-1 code analysis into `code-map.md`.

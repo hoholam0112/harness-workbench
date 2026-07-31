@@ -1,96 +1,79 @@
-# Stage 4: Experiment
+---
+name: experiment-report
+description: Writes the ML experiment reports - this loop's experiment report and the whole-project report, in markdown and then self-contained HTML. Use whenever the user asks for a report or a results write-up, in any phrasing - "보고서 써줘", "실험 보고서 작성해줘", "결과 정리해줘", "리포트 만들어줘", "결과 문서로 만들어줘", "프로젝트 보고서 갱신해줘" - and whenever stage 4 of the experiment loop reaches its reporting step. Covers the required sections, the two-pass fill-then-extend method, HTML rendering, and the verification gates for both. Always use this skill instead of writing a report directly.
+---
 
-**Purpose:** run the experiment and report the results.
+<!-- BEGIN shared-principles -->
+## Core Principles
+
+Paths below are relative to this skill's own directory.
+
+- **Code grounding.** Docs are for fast context only. Read the actual code
+  before judging, implementing, or verifying. When docs and code disagree,
+  trust the code.
+- **Claim-level sourcing.** Every claim in an agent-authored document cites its
+  source file (and line where useful).
+- **Template compliance (binding).** Create every document by copying its
+  template from `../../shared/templates/`, never by writing freely. Keep every
+  section heading unrenamed and in order, fill each with real content, delete
+  every guidance comment and `FILL` marker, and meet stated quantities
+  literally. "N/A" needs one sentence of why. The template is a floor, not a
+  cap — additions are welcome. Full rules:
+  `../../shared/template-compliance.md`. A deviation is a Major issue, not a
+  stylistic one.
+- **Always-read core.** On user input, always read `docs/glossary.md`,
+  `docs/index.md`, every knowledge doc that `index.md` marks as always-read
+  core, and `docs/agent/guidance/human-feedback.md`. Read these every time —
+  judging whether you need them is exactly how known facts get skipped. Align
+  the user's terms against the glossary, and ask them rather than guess when a
+  term they used is ambiguous. Only then open what the specific task needs.
+- **Log human input.** Append every human choice, instruction, correction, and
+  stated preference to `docs/agent/loops/<loop-id>/loop-log.md` as it happens.
+  Completeness beats polish.
+- **Durable facts go to the wiki immediately.** The moment the user states a
+  fact or constraint that stays true beyond this turn, invoke the
+  `experiment-wiki` skill and write it to its home now — not at wrap-up. Then
+  tell the user in one line where you saved it. If the user tells you something
+  you should already know, that is proof the fact was never captured or is not
+  being read: capture it right then, and fix why it was not read.
+- **Escalation.** Stop, set `status: "escalated"` in `state.json`, record the
+  question in `pending_decisions`, describe the situation to the user, and
+  present 2-3 options.
+- **Verification gates** run in subagents per
+  `../../shared/verification-gate.md`. Subagents verify; they never execute the
+  work. After a gate passes, summarize what was produced before moving on.
+- **Language.** All docs and code in English. `docs/glossary.md` may contain
+  Korean. Talk to the user in Korean (technical terms in English).
+- **Plain language.** State the conclusion first, then a short reason. One idea
+  per sentence; keep sentences short. Gloss a technical term the first time you
+  use it. Prefer plain Korean over transliterated English (write "출처를 따라갈
+  수 있는지", not "추적성"). Prefer concrete verbs over abstract nouns.
+<!-- END shared-principles -->
+
+# Experiment Reports
+
+**Purpose:** produce the two reports and verify them before the user sees them.
 
 ## Must read first
 
-The **always-read core** (SKILL.md → "Progressive context loading, with an
-always-read core"): `docs/glossary.md`, `docs/index.md`, the always-read core
-knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage:
+If this skill was not invoked by the experiment loop (e.g. the user asked for
+a report directly), determine the current loop from the most recent
+`docs/agent/loops/*/state.json` — directories sort chronologically by name, so
+the last one is the current loop.
 
-- this loop's `tech-design-spec.md` — the exact commands, metrics, and
-  thresholds that decide each acceptance criterion, the **Serving Measurement
-  Plan** this stage executes, and the progress-logging plan the stall check
-  relies on;
-- this loop's `experiment-design.md` — the acceptance criteria to evaluate, and
-  the serving targets in its Constraints that the measured numbers are judged
-  against;
-- `docs/agent/knowledge/artifact-map.md` — where artifacts are stored and what
-  to register;
-- `templates/experiment-report.md` when writing the loop markdown report (the
-  HTML version follows the **HTML rendering** section of this reference).
-
-For the project report (see the **Project report** section), also read the
-cross-loop sources: `docs/agent/knowledge/experiment-ledger.md`,
-`docs/agent/knowledge/long-term-plan.md` (if it exists), the PRD in
-`docs/human/raw/` (including its **Serving Requirements**),
-`docs/agent/knowledge/decisions/`, the relevant `docs/agent/knowledge/` topic
-docs (data/model/eval, and `serving.md` if it exists), and
-`templates/project-report.md`.
-
-## Execution
-
-- Steps per the tech design: data preparation → training → evaluation →
-  serving measurement. Run the serving measurement per the spec's **Serving
-  Measurement Plan** — its command, under its stated condition, writing to its
-  output file. Skip this step only when the plan says "N/A"; do not skip it
-  because the accuracy results already look decided. Record the measurement
-  condition alongside the numbers in the output file, so the report can cite
-  both from one place.
-- Run long jobs (anything that could outlive the session) in the background:
-
-  ```
-  mkdir -p docs/agent/loops/<loop-id>/logs
-  nohup <command> > docs/agent/loops/<loop-id>/logs/<job>.log 2>&1 &
-  ```
-
-  Record in `state.json.jobs`: command, PID, log path, expected outputs.
-- Record enough to reproduce every run: commit hash, configs, seeds, data
-  versions. Keep the run config alongside its outputs.
-- Store artifacts (checkpoints, prepared datasets, run outputs, plots) in the
-  project's artifact location (see the artifact map). Register each significant
-  artifact in `docs/agent/knowledge/artifact-map.md` when produced — path,
-  type, this loop, approx size, purpose, retention (`keep`/`temp`), config
-  source. This map, not git, tracks artifacts that are too large to commit.
-
-## Monitor and continue
-
-Don't block the session waiting on a job. Schedule a re-check on an interval;
-between checks the session can do other work or idle. Each check reads the log
-and the PID, decides one of the outcomes below, then re-schedules or moves on.
-
-- Pick the interval from the job's own cadence — about the gap between the
-  progress lines the code emits (see tech design / implementation), not
-  shorter. A job that logs every ~10 min needs no 1-minute check.
-- Use the harness's scheduled re-check mechanism (e.g. a monitor, a scheduled
-  wake-up, or a recurring `/loop`) to drive it. On a plain shell, an outer
-  polling loop serves the same role. Never hold the session in a blocking
-  `sleep`.
-
-Each check, decide from log + PID:
-
-| Signal | Outcome |
-|--------|---------|
-| Expected outputs exist / log shows completion | **Complete** — verify outputs are non-empty and well-formed, record the run config and register artifacts, then continue to the next step. |
-| PID alive, new progress line since last check | **Running** — re-schedule the next check. |
-| PID alive, no new progress line for ~30 min | **Stalled** — escalate (`status: escalated`); don't kill or rerun on your own. |
-| PID gone, outputs incomplete / log shows error | **Failed** — rerun once at most; if it fails again, escalate instead of retrying. |
-
-Auto-continue only through the experiment's own steps (data preparation →
-training → evaluation → serving measurement): when one completes, start the
-next without waiting for the user. Stop for the user only at the report-review gate below, and at any
-escalation.
-
-**On session resume** (fresh session, jobs still in `state.json.jobs`): for
-each job, check whether the PID is alive and still matches the recorded command
-(PIDs get reused). If alive, resume monitoring. If gone, decide from the log
-whether it finished or failed, then continue or rerun per the table above.
-Update `state.json` (`stage`, `current_task`, `jobs`) after every transition so
-the next check — or the next session — starts from the truth.
+- this loop's `experiment-design.md` — the acceptance criteria and the serving
+  targets in its Constraints, which the reports judge results against;
+- this loop's `tech-design-spec.md` — the metrics and thresholds;
+- the actual output files the numbers come from (metrics files, logs);
+- for the project report: `docs/agent/knowledge/experiment-ledger.md`,
+  `docs/agent/knowledge/long-term-plan.md` (if it exists), the PRD in
+  `docs/human/raw/` including its Serving Requirements,
+  `docs/agent/knowledge/decisions/`, the `docs/agent/knowledge/` topic docs
+  (data/model/eval, and `serving.md` if it exists).
 
 ## Report
 
-This stage produces **two** reports, each written as markdown (the gated source)
+This skill produces **two** reports, each written as markdown (the gated source)
 then rendered to HTML: the **loop report** — this loop's experiment — and the
 **project report** — the whole project across all loops. Produce both, then ask
 the user to review them together.
@@ -98,7 +81,7 @@ the user to review them together.
 ### A. Loop report
 
 1. Write `experiment-report.md` in the loop directory from
-   `templates/experiment-report.md`, grounded in actual outputs (metrics
+   `../../shared/templates/experiment-report.md`, grounded in actual outputs (metrics
    files, logs). Cite the source file for every claim. Two passes:
    1. **Fill the floor.** Complete every mandatory section of the template to
       the required depth — this is the non-negotiable baseline, not the goal.
@@ -109,9 +92,9 @@ the user to review them together.
       The template is a floor, not a cap; adding beyond it is expected. Briefly
       say why each addition helps (one line) so the choice is deliberate, not
       decoration. Don't invent data — additions must come from the same outputs.
-2. Verification gate (references/verification-gate.md). It checks the report
+2. Verification gate (../../shared/verification-gate.md). It checks the report
    against the **same criteria it was written to** — the writing principles and
-   per-section requirements in `templates/experiment-report.md`, plus the
+   per-section requirements in `../../shared/templates/experiment-report.md`, plus the
    Template compliance principle (every section filled to depth, no
    placeholders) — so the guidance and the gate never diverge. Flag any
    violation by severity (e.g. an unexplained metric or unglossed term, a
@@ -139,15 +122,15 @@ this one. A single evolving file: overwrite it so it always reflects the project
 as it stands now.
 
 4. Write/refresh `docs/agent/knowledge/project-report.md` from
-   `templates/project-report.md`, grounded in the cross-loop sources (ledger,
+   `../../shared/templates/project-report.md`, grounded in the cross-loop sources (ledger,
    long-term plan, PRD, ADRs, knowledge topic docs, artifact map). **The ledger
    has no row for this loop until wrap-up — take the current loop's entry from
    the loop report you just wrote in step 1.** Same two passes as the loop
    report: fill the floor, then extend for the reader. Every section spans all
    loops; the Experiment Journey is the cross-loop story, not a restatement of
    this loop.
-5. Verification gate (references/verification-gate.md), same unified pattern: it
-   checks against `templates/project-report.md`'s writing principles and
+5. Verification gate (../../shared/verification-gate.md), same unified pattern: it
+   checks against `../../shared/templates/project-report.md`'s writing principles and
    per-section requirements plus the Template compliance principle. Flag
    violations by severity. Plus these checks only the gate performs:
    - every number traces to its source (a loop's `experiment-report.md`, a
@@ -166,7 +149,10 @@ as it stands now.
 
 ### Then
 
-7. Request user review of **both** reports (`status: awaiting_user_review`).
+7. Request user review of **both** reports. If the experiment loop called this
+   skill, set `status: awaiting_user_review`; otherwise just hand the reports
+   to the user — a standalone invocation must not touch `state.json`, since
+   that would move the loop's position without the loop asking for it.
 
 ## HTML rendering
 
@@ -275,7 +261,7 @@ files.
 
 ### HTML verification gate
 
-Run the gate (references/verification-gate.md) on each HTML page before handing
+Run the gate (../../shared/verification-gate.md) on each HTML page before handing
 it to the user. It checks the **same criteria the HTML was built to** — every
 requirement in the Writing principles, the report's tabs/sections, Design, and
 Charts (audience readability, per-section depth, self-contained file; for the
@@ -291,5 +277,6 @@ not judge from the source. Plus these checks only the gate performs:
 - **Numbers trace**: every figure and chart value matches the source markdown
   report and its cited output files.
 
-**Done when:** user has reviewed **both** reports (loop and project). Set state
-to stage 5.
+**Done when:** both reports are written, both gates passed, and both HTML pages
+render. Hand both to the user for review. If the experiment loop called this
+skill, return control to stage 4 with `status: awaiting_user_review`.

@@ -5,9 +5,9 @@ that tech design can start.
 
 ## Must read first
 
-The **always-read core** (SKILL.md → "Progressive context loading, with an
-always-read core"): `docs/glossary.md`, `docs/index.md`, the always-read core
-knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage:
+The **always-read core** (SKILL.md → "Always-read core"):
+`docs/glossary.md`, `docs/index.md`, the always-read core knowledge docs, and
+`docs/agent/guidance/human-feedback.md`. Plus for this stage:
 
 - the previous loop's `experiment-report.md` (its Error Analysis) — what failed
   last time; if this is the first loop, note there is none;
@@ -28,10 +28,10 @@ knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage
   zero-padded sequence + slug) with `state.json` initialized: stage 1,
   `in_progress`, `start_commit` set to the current commit hash (used by
   wrap-up's change-scope diff). Also start `loop-log.md` (from
-  `templates/loop-log.md`) — appended with human choices and inputs through the
+  `../../shared/templates/loop-log.md`) — appended with human choices and inputs through the
   whole loop, distilled at wrap-up.
 - `experiment-design.md` in the loop directory, from
-  `templates/experiment-design-doc.md`: problem definition / data /
+  `../../shared/templates/experiment-design-doc.md`: problem definition / data /
   external research / prior error review / hypothesis / search space /
   evaluation method / constraints / acceptance criteria / out of scope.
 
@@ -75,7 +75,7 @@ knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage
    before this was required), ask the user once — does this project serve
    requests, and if so what are the latency/throughput/cost targets and the
    condition they hold under? Write their answer to its home immediately per
-   SKILL.md "Capture durable facts on the spot": into
+   SKILL.md "Durable facts go to the wiki immediately": into
    `docs/agent/knowledge/serving.md`, marked always-read core in `index.md`, and
    tell the user where you saved it. Do not carry the answer only in this loop's
    doc — the next loop would have to ask again.
@@ -86,7 +86,7 @@ knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage
 8. Write the design doc. For every other section, present the user a question
    with 2-3 options (include a free-form option for their own input). Keep the
    writing plain — detailed but easy, readable by an undergraduate.
-9. Verification gate (references/verification-gate.md). Criteria:
+9. Verification gate (../../shared/verification-gate.md). Criteria:
    - the hypothesis is falsifiable;
    - the evaluation method can actually measure the acceptance criteria;
    - the data section matches the real data (checked against code/files);

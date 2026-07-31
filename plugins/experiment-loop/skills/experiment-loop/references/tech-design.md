@@ -11,9 +11,9 @@ code and fix the map.
 
 ## Must read first
 
-The **always-read core** (SKILL.md → "Progressive context loading, with an
-always-read core"): `docs/glossary.md`, `docs/index.md`, the always-read core
-knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage:
+The **always-read core** (SKILL.md → "Always-read core"):
+`docs/glossary.md`, `docs/index.md`, the always-read core knowledge docs, and
+`docs/agent/guidance/human-feedback.md`. Plus for this stage:
 
 - this loop's `experiment-design.md` — what the design must enable;
 - `docs/agent/knowledge/code-map.md`, then **the actual code modules** the design
@@ -21,7 +21,7 @@ knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage
 
 ## Deliverables (both in the loop directory)
 
-- `tech-design-spec.md` from `templates/tech-design-spec.md`:
+- `tech-design-spec.md` from `../../shared/templates/tech-design-spec.md`:
   - AS-IS / TO-BE, based on the Experiment Design Doc;
   - acceptance criteria restated technically — the exact command, metric,
     and threshold that decides each one;
@@ -37,15 +37,15 @@ knowledge docs, and `docs/agent/guidance/human-feedback.md`. Plus for this stage
     training, evaluation), specify how it reports progress at a regular
     interval — a step/epoch/sample count, a key metric, and a timestamp
     written to its log — so a watcher can tell it is alive and advancing.
-- `implementation-plan.md` from `templates/implementation-plan.md`:
-  - tasks (each specified per `templates/task-spec.md`), their order and
+- `implementation-plan.md` from `../../shared/templates/implementation-plan.md`:
+  - tasks (each specified per `../../shared/templates/task-spec.md`), their order and
     dependencies, and verification checkpoints — covering implementation
     through verification.
 
 ## Procedure outline
 
 1. Write the spec, then the plan.
-2. Verification gate (references/verification-gate.md). Criteria:
+2. Verification gate (../../shared/verification-gate.md). Criteria:
    - AS-IS matches the real code;
    - TO-BE is sufficient to run the designed experiment;
    - every acceptance criterion has a technical verification;
